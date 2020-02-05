@@ -54,7 +54,9 @@ pub fn create_ecr_repo(
 }
 
 /// Get repository details by repository name
-fn get_repository_details(repository_name: &str) -> Result<Option<Repository>, &'static str> {
+pub(crate) fn get_repository_details(
+    repository_name: &str,
+) -> Result<Option<Repository>, &'static str> {
     info!("Get repository details: {}", repository_name);
     let req = DescribeRepositoriesRequest {
         max_results: None,
@@ -87,7 +89,6 @@ enum ImageTagStatus {
     #[allow(non_camel_case_types)]
     any,
 }
-
 impl fmt::Display for ImageTagStatus {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let name = match self {
@@ -176,12 +177,10 @@ struct PolicyRules {
 
 const IMAGES_MAX_COUNT: u32 = 100;
 
-///
 /// Create expiration policy for images in a repository.
 ///
 /// Currently supports only expiry by "count more than".
 /// First 100 images will be saved, no matter how old, the rest will be deleted.
-///
 pub fn create_ecr_repo_policy(
     repository_name: &str,
     registry_id: &str,
@@ -230,9 +229,21 @@ pub fn create_ecr_repo_policy(
     }
 }
 
+/// Constructs the name of the ECR repo for the service
+pub(crate) fn get_repo_name_for_service(
+    env_name: &str,
+    project_name: &str,
+    service_name: &str,
+) -> String {
+    format!("{}/{}/{}", env_name, project_name, service_name)
+}
+
 /// Main tasks for creating ECR repository.
-pub fn add_new(project: &Project, service_name: &str) -> Result<Repository, &'static str> {
-    let repository_name = format!("{}/{}/{}", project.env_name, project.name, service_name);
+/// ECR repos will have the name of environment_name/project_name/service_name
+/// ECR will have a lifetime policy of last N images saved.
+pub fn add_new_repo(project: &Project, service_name: &str) -> Result<Repository, &'static str> {
+    let repository_name =
+        get_repo_name_for_service(&project.env_name, &project.name, &service_name);
     let repository = create_ecr_repo(&project, &repository_name)
         .unwrap()
         .unwrap();

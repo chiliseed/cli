@@ -8,6 +8,7 @@ use structopt::StructOpt;
 
 use crate::commands::{Command, Opt, ServiceSubCommand};
 use crate::project::Project;
+use crate::service::AddECSServiceParams;
 
 fn main() {
     pretty_env_logger::try_init_custom_env("CHILISEED_LOG")
@@ -23,10 +24,21 @@ fn main() {
 
     match args.cmd {
         Command::Service { cmd } => match cmd {
-            ServiceSubCommand::Add { service_name } => {
-                match service::add_new(&project, &service_name) {
-                    Ok(repo) => info!("Created repo: {}", repo.repository_name.unwrap()),
-                    Err(e) => error!("Something went wrong: {}", e),
+            ServiceSubCommand::Add {
+                service_name,
+                cluster_name,
+                port,
+            } => {
+                let params = AddECSServiceParams {
+                    project,
+                    cluster: cluster_name,
+                    port,
+                    service_name: String::from(service_name.as_str()),
+                };
+
+                match service::setup_deployment(params) {
+                    Ok(()) => info!("Service ready to deploy: {}", String::from(service_name)),
+                    Err(e) => error!("Something went wrong: {:?}", e),
                 }
             }
         },
