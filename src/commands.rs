@@ -10,26 +10,31 @@ use structopt::StructOpt;
 #[derive(Debug, StructOpt)]
 #[structopt(name = "chiliseed", about = "Chiliseed command line interface")]
 pub struct Opt {
-    /// The name of the project on which to take action.
-    #[structopt(short = "p", long = "project", env = "CHILISEED_PROJECT_NAME")]
-    pub project_name: String,
-
-    /// Project environment on which to take action.
-    #[structopt(short, long, env = "CHILISEED_ENVIRONMENT")]
-    pub environment: String,
-
+    //    /// The name of the project on which to take action.
+    //    #[structopt(short = "p", long = "project", env = "CHILISEED_PROJECT_NAME")]
+    //    pub project_name: String,
+    //
+    //    /// Project environment on which to take action.
+    //    #[structopt(short, long, env = "CHILISEED_ENVIRONMENT")]
+    //    pub environment: String,
     #[structopt(subcommand)]
     pub cmd: Command,
 }
 
 #[derive(Debug, StructOpt)]
 pub enum Command {
-    /// service sub commands
-    #[structopt(name = "service", about = "Management commands for services")]
-    Service {
+    /// Environment sub commands
+    #[structopt(name = "environment", about = "Management commands for environments")]
+    Environment {
         #[structopt(subcommand)]
-        cmd: ServiceSubCommand,
+        cmd: EnvSubCommands,
     },
+}
+
+#[derive(Debug, StructOpt)]
+pub enum EnvSubCommands {
+    #[structopt(name = "list", about = "List all environments.")]
+    List {},
 }
 
 #[derive(Debug, StructOpt)]
