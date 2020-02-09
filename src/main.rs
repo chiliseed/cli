@@ -1,5 +1,6 @@
 mod client;
 mod commands;
+mod environments;
 
 use std::process::exit;
 
@@ -7,8 +8,8 @@ use std::process::exit;
 extern crate log;
 use structopt::StructOpt;
 
-use crate::commands::{Command, EnvSubCommands, Opt};
 use client::APIClient;
+use commands::{Command, EnvSubCommands, Opt};
 
 fn main() {
     pretty_env_logger::try_init_custom_env("CHILISEED_LOG")
@@ -27,15 +28,8 @@ fn main() {
     match args.cmd {
         Command::Environment { cmd } => match cmd {
             EnvSubCommands::List {} => {
-                info!("Getting a list of environments");
-                match api_client.list_envs() {
-                    Ok(envs) => {
-                        info!("{:?}", envs);
-                    }
-                    Err(err) => {
-                        error!("Failed to list environments: {}", err);
-                    }
-                }
+                info!("Getting your environments");
+                environments::list(&api_client).expect("Error listing environments");
             }
         },
     }

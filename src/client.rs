@@ -49,7 +49,7 @@ impl fmt::Display for APIClientError {
     }
 }
 
-type APIResult<T> = Result<T, APIClientError>;
+pub type APIResult<T> = Result<T, APIClientError>;
 
 pub struct APIClient {
     username: String,
