@@ -29,7 +29,12 @@ fn main() {
         Command::Environment { cmd } => match cmd {
             EnvSubCommands::List {} => {
                 info!("Getting your environments");
-                environments::list(&api_client).expect("Error listing environments");
+                environments::list(&api_client);
+            }
+
+            EnvSubCommands::Create { name, domain } => {
+                info!("Creating new environment");
+                environments::add(&api_client, name, domain);
             }
         },
     }

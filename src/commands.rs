@@ -35,6 +35,10 @@ pub enum Command {
 pub enum EnvSubCommands {
     #[structopt(name = "list", about = "List all environments.")]
     List {},
+    Create {
+        name: Option<String>,
+        domain: Option<String>,
+    },
 }
 
 #[derive(Debug, StructOpt)]

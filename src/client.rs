@@ -70,8 +70,7 @@ impl APIClient {
             Ok(val) => val,
             Err(_err) => {
                 println!("Username: ");
-                let val = read!();
-                val
+                read!()
             }
         };
 
@@ -148,10 +147,29 @@ impl APIClient {
         })
     }
 
-    pub fn list_envs(&self) -> APIResult<Vec<Env>> {
-        let endpoint = get_url(&self.api_host, "/api/environments/")?;
+    fn get(&self, endpoint: &str) -> APIResult<String> {
+        let endpoint = get_url(&self.api_host, endpoint)?;
         let resp = self.client.get(endpoint.as_str()).send()?;
-        let response_body = resp.text().unwrap();
+        Ok(resp.text().unwrap())
+    }
+
+    fn post<T: Serialize>(&self, endpoint: &str, payload: Option<&T>) -> APIResult<String> {
+        let endpoint = get_url(&self.api_host, endpoint)?;
+        if let Some(data) = payload {
+            Ok(self
+                .client
+                .post(endpoint.as_str())
+                .json(data)
+                .send()?
+                .text()
+                .unwrap())
+        } else {
+            Ok(self.client.post(endpoint.as_str()).send()?.text().unwrap())
+        }
+    }
+
+    pub fn list_envs(&self) -> APIResult<Vec<Env>> {
+        let response_body = self.get("/api/environments/")?;
 
         let envs: Vec<Env> = serde_json::from_str(&response_body).map_err(|err| {
             let api_err: APIError = serde_json::from_str(&response_body)
@@ -161,6 +179,12 @@ impl APIClient {
             return APIClientError::HTTPRequestError(api_err.detail);
         })?;
         Ok(envs)
+    }
+
+    pub fn create_env(&self, env: &EnvRequest) -> APIResult<Env> {
+        let response_body = self.post("/api/environments/create", Some(env))?;
+        let env: Env = serde_json::from_str(&response_body).unwrap();
+        Ok(env)
     }
 }
 
@@ -178,6 +202,15 @@ struct LoginResponse {
 #[derive(Debug, Deserialize)]
 struct LoginResponseError {
     non_field_errors: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct EnvRequest {
+    pub name: String,
+    pub domain: String,
+    pub region: String,
+    pub access_key: String,
+    pub access_key_secret: String,
 }
 
 #[derive(Debug, Deserialize)]
