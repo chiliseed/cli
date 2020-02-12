@@ -1,12 +1,15 @@
 use std::error::Error;
 use std::{env, fmt};
 
+use chrono::{DateTime, Utc};
 use reqwest;
-use reqwest::{blocking, header};
+use reqwest::{blocking, header, StatusCode};
 use rpassword::read_password_from_tty;
 use serde::{Deserialize, Serialize};
 use text_io::read;
 use url::{ParseError, Url};
+
+use crate::schemas::{Env, ExecLog};
 
 const API_HOST: &str = "http://localhost:8000";
 
@@ -14,7 +17,6 @@ const API_HOST: &str = "http://localhost:8000";
 pub enum APIClientError {
     HTTPRequestError(String),
     HTTPTimeoutError(String),
-    SerializerError(String),
     DeSerializerError(String),
     URLParseError(ParseError),
 }
@@ -24,7 +26,6 @@ impl Error for APIClientError {
         match *self {
             APIClientError::HTTPRequestError(ref cause) => cause,
             APIClientError::HTTPTimeoutError(ref cause) => cause,
-            APIClientError::SerializerError(ref cause) => cause,
             APIClientError::DeSerializerError(ref cause) => cause,
             APIClientError::URLParseError(ref err) => Error::description(err),
         }
@@ -50,6 +51,7 @@ impl fmt::Display for APIClientError {
 }
 
 pub type APIResult<T> = Result<T, APIClientError>;
+type ResponseBody = String;
 
 pub struct APIClient {
     username: String,
@@ -147,44 +149,87 @@ impl APIClient {
         })
     }
 
-    fn get(&self, endpoint: &str) -> APIResult<String> {
-        let endpoint = get_url(&self.api_host, endpoint)?;
-        let resp = self.client.get(endpoint.as_str()).send()?;
-        Ok(resp.text().unwrap())
+    fn get(&self, endpoint: &str) -> APIResult<(ResponseBody, StatusCode)> {
+        let url = get_url(&self.api_host, endpoint)?;
+        let resp = self.client.get(&url).send()?;
+        let status = resp.status();
+        let body = resp.text().unwrap();
+        Ok((body.to_owned(), status))
     }
 
-    fn post<T: Serialize>(&self, endpoint: &str, payload: Option<&T>) -> APIResult<String> {
-        let endpoint = get_url(&self.api_host, endpoint)?;
+    fn post<T: Serialize>(
+        &self,
+        endpoint: &str,
+        payload: Option<&T>,
+    ) -> APIResult<(ResponseBody, StatusCode)> {
+        let url = get_url(&self.api_host, endpoint)?;
         if let Some(data) = payload {
-            Ok(self
-                .client
-                .post(endpoint.as_str())
-                .json(data)
-                .send()?
-                .text()
-                .unwrap())
+            let req = self.client.post(&url).json(data).send()?;
+            let status = req.status();
+            let body = req.text().unwrap();
+            Ok((body, status))
         } else {
-            Ok(self.client.post(endpoint.as_str()).send()?.text().unwrap())
+            let req = self.client.post(&url).send()?;
+            let status = req.status();
+            let body = req.text().unwrap();
+            Ok((body, status))
         }
     }
 
     pub fn list_envs(&self) -> APIResult<Vec<Env>> {
-        let response_body = self.get("/api/environments/")?;
+        let (response_body, status_code) = self.get("/api/environments/")?;
 
         let envs: Vec<Env> = serde_json::from_str(&response_body).map_err(|err| {
-            let api_err: APIError = serde_json::from_str(&response_body)
-                .map_err(|_err| APIClientError::DeSerializerError(err.to_string()))
-                .unwrap();
-            error!("{}", api_err.detail);
-            return APIClientError::HTTPRequestError(api_err.detail);
+            if status_code.is_server_error() {
+                let api_err: APIError = serde_json::from_str(&response_body)
+                    .map_err(|err| APIClientError::DeSerializerError(err.to_string()))
+                    .unwrap();
+                error!("{}", api_err.detail);
+                return APIClientError::HTTPRequestError(api_err.detail);
+            }
+            error!("{}", err.to_string());
+            APIClientError::DeSerializerError("Failed to parse error response".to_string())
         })?;
         Ok(envs)
     }
 
-    pub fn create_env(&self, env: &EnvRequest) -> APIResult<Env> {
-        let response_body = self.post("/api/environments/create", Some(env))?;
-        let env: Env = serde_json::from_str(&response_body).unwrap();
+    pub fn create_env(&self, env: &CreateEnvRequest) -> APIResult<CreateEnvResponse> {
+        let (response_body, status_code) = self.post("/api/environments/create", Some(env))?;
+
+        debug!("response body {}", response_body);
+
+        let env: CreateEnvResponse = serde_json::from_str(&response_body).map_err(|err| {
+            if status_code.is_server_error() {
+                let api_err: APIError = serde_json::from_str(&response_body)
+                    .map_err(|_err| APIClientError::DeSerializerError(err.to_string()))
+                    .unwrap();
+                error!("{}", api_err.detail);
+                return APIClientError::HTTPRequestError(api_err.detail);
+            }
+            if status_code.is_client_error() {
+                let api_err: CreateEnvResponseError = serde_json::from_str(&response_body)
+                    .map_err(|err| APIClientError::DeSerializerError(err.to_string()))
+                    .unwrap();
+                if let Some(name_err) = api_err.name {
+                    return APIClientError::HTTPRequestError(name_err[0].to_owned());
+                }
+                if let Some(domain_err) = api_err.domain {
+                    return APIClientError::HTTPRequestError(domain_err[0].to_owned());
+                }
+                if let Some(region_err) = api_err.region {
+                    return APIClientError::HTTPRequestError(region_err[0].to_owned());
+                }
+            }
+            error!("{}", err.to_string());
+            APIClientError::DeSerializerError("Failed to parse error response".to_string())
+        })?;
         Ok(env)
+    }
+
+    pub fn get_exec_log(&self, slug: String) -> APIResult<ExecLog> {
+        let (response_body, status) = self.get(&format!("/api/execution/status/{}", slug))?;
+        let log: ExecLog = serde_json::from_str(&response_body).unwrap();
+        Ok(log)
     }
 }
 
@@ -205,7 +250,7 @@ struct LoginResponseError {
 }
 
 #[derive(Debug, Serialize)]
-pub struct EnvRequest {
+pub struct CreateEnvRequest {
     pub name: String,
     pub domain: String,
     pub region: String,
@@ -214,11 +259,16 @@ pub struct EnvRequest {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Env {
-    pub slug: String,
-    pub name: String,
-    pub region: String,
-    pub domain: String,
+pub struct CreateEnvResponse {
+    pub env: Env,
+    pub log: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct CreateEnvResponseError {
+    name: Option<Vec<String>>,
+    region: Option<Vec<String>>,
+    domain: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]

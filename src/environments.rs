@@ -1,13 +1,18 @@
+use std::thread::sleep;
+use std::time::Duration;
+
 use rusoto_core::Region;
-use rusoto_credential::{AwsCredentials, EnvironmentProvider, ProvideAwsCredentials};
+use rusoto_credential::{
+    AwsCredentials, CredentialsError, EnvironmentProvider, ProvideAwsCredentials,
+};
 use text_io::read;
 use tokio;
 
-use crate::client::{APIClient, EnvRequest};
+use crate::client::{APIClient, CreateEnvRequest};
 
 #[tokio::main]
-async fn get_aws_credentials() -> AwsCredentials {
-    EnvironmentProvider::default().credentials().await.unwrap()
+async fn get_aws_credentials() -> Result<AwsCredentials, CredentialsError> {
+    EnvironmentProvider::default().credentials().await
 }
 
 pub fn add(api_client: &APIClient, name: Option<String>, domain: Option<String>) {
@@ -21,9 +26,15 @@ pub fn add(api_client: &APIClient, name: Option<String>, domain: Option<String>)
         read!()
     });
 
-    let creds = get_aws_credentials();
+    let creds = match get_aws_credentials() {
+        Ok(val) => val,
+        Err(err) => {
+            eprintln!("ERROR: {}", err.message);
+            return;
+        }
+    };
 
-    let req = EnvRequest {
+    let req = CreateEnvRequest {
         name: env_name.to_owned(),
         domain: env_domain.to_string(),
         region: Region::default().name().to_string(),
@@ -32,8 +43,39 @@ pub fn add(api_client: &APIClient, name: Option<String>, domain: Option<String>)
     };
 
     match api_client.create_env(&req) {
-        Ok(env) => {
-            println!("Launched environment: {}", env.name);
+        Ok(resp) => {
+            println!("Launching environment: {}", resp.env.name);
+            let timeout_minutes = 30;
+            let mut waited = 0;
+            loop {
+                if waited >= timeout_minutes * 60 {
+                    eprintln!("TIMING OUT after 30 minutes. Please contact support for help");
+                    return;
+                }
+
+                sleep(Duration::from_secs(30));
+                waited += 30;
+
+                println!("Checking create status");
+
+                match api_client.get_exec_log(resp.log.clone()) {
+                    Ok(exec_log) => {
+                        debug!("{:?}", exec_log);
+
+                        if exec_log.is_success {
+                            println!("Environment is ready after {}s", waited);
+                            return;
+                        }
+
+                        println!("Still creating [{}s]", waited);
+                        continue;
+                    }
+                    Err(err) => {
+                        eprintln!("Error checking status");
+                        return;
+                    }
+                }
+            }
         }
         Err(err) => {
             eprintln!("Error creating environment: {}", err.to_string());
@@ -50,7 +92,7 @@ pub fn list(api_client: &APIClient) {
             }
             println!("Your environments: ");
             for env in envs {
-                println!("{}", env.name);
+                println!("{:?}", env);
             }
         }
 

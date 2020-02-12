@@ -1,6 +1,7 @@
 mod client;
 mod commands;
 mod environments;
+mod schemas;
 
 use std::process::exit;
 
@@ -16,6 +17,8 @@ fn main() {
         .expect("Cannot initialize the logger that was already initialized.");
 
     info!("Firing up chiliseed CLI");
+    let args = Opt::from_args();
+
     let api_client = match APIClient::new() {
         Ok(c) => c,
         Err(err) => {
@@ -23,7 +26,6 @@ fn main() {
             exit(1)
         }
     };
-    let args = Opt::from_args();
 
     match args.cmd {
         Command::Environment { cmd } => match cmd {
