@@ -1,6 +1,7 @@
 mod client;
 mod commands;
 mod environments;
+mod projects;
 mod schemas;
 
 use std::process::exit;
@@ -10,7 +11,7 @@ extern crate log;
 use structopt::StructOpt;
 
 use client::APIClient;
-use commands::{Command, EnvSubCommands, Opt};
+use commands::{Command, EnvSubCommands, Opt, ProjectSubCommands};
 
 fn main() {
     pretty_env_logger::try_init_custom_env("CHILISEED_LOG")
@@ -31,12 +32,22 @@ fn main() {
         Command::Environment { cmd } => match cmd {
             EnvSubCommands::List {} => {
                 info!("Getting your environments");
-                environments::list(&api_client);
+                environments::list_envs(&api_client);
             }
 
             EnvSubCommands::Create { name, domain } => {
                 info!("Creating new environment");
                 environments::add(&api_client, name, domain);
+            }
+        },
+
+        Command::Project {
+            environment_name,
+            cmd,
+        } => match cmd {
+            ProjectSubCommands::List {} => {
+                info!("Getting list of project");
+                projects::list_projects(&api_client, environment_name);
             }
         },
     }

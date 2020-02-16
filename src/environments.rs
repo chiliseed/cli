@@ -70,7 +70,7 @@ pub fn add(api_client: &APIClient, name: Option<String>, domain: Option<String>)
                         println!("Still creating [{}s]", waited);
                         continue;
                     }
-                    Err(err) => {
+                    Err(_err) => {
                         eprintln!("Error checking status");
                         return;
                     }
@@ -83,8 +83,8 @@ pub fn add(api_client: &APIClient, name: Option<String>, domain: Option<String>)
     }
 }
 
-pub fn list(api_client: &APIClient) {
-    match api_client.list_envs() {
+pub fn list_envs(api_client: &APIClient) {
+    match api_client.list_envs(None) {
         Ok(envs) => {
             if envs.is_empty() {
                 println!("You have not created any environments yet.");

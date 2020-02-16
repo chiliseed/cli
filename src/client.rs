@@ -1,7 +1,6 @@
 use std::error::Error;
 use std::{env, fmt};
 
-use chrono::{DateTime, Utc};
 use reqwest;
 use reqwest::{blocking, header, StatusCode};
 use rpassword::read_password_from_tty;
@@ -9,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use text_io::read;
 use url::{ParseError, Url};
 
-use crate::schemas::{Env, ExecLog};
+use crate::schemas::{Env, ExecLog, Project};
 
 const API_HOST: &str = "http://localhost:8000";
 
@@ -243,10 +242,30 @@ impl APIClient {
     }
 
     pub fn get_exec_log(&self, slug: String) -> APIResult<ExecLog> {
-        let (response_body, status) = self.get(&format!("/api/execution/status/{}", slug))?;
+        let (response_body, _) = self.get(&format!("/api/execution/status/{}", slug))?;
         let log: ExecLog = serde_json::from_str(&response_body).unwrap();
         Ok(log)
     }
+
+    pub fn list_projects(&self, env_slug: &str) -> APIResult<Vec<Project>> {
+        let (response_body, status) =
+            self.get(&format!("/api/environment/{}/projects", env_slug))?;
+
+        let projects: Vec<Project> = serde_json::from_str(&response_body).map_err(|err| {
+            if status.is_server_error() {
+                let api_err: APIError = serde_json::from_str(&response_body)
+                    .map_err(|err| APIClientError::DeSerializerError(err.to_string()))
+                    .unwrap();
+                error!("{}", api_err.detail);
+                return APIClientError::HTTPRequestError(api_err.detail);
+            }
+            error!("{}", err.to_string());
+            APIClientError::DeSerializerError("Failed to parse error response".to_string())
+        })?;
+        Ok(projects)
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct APIError {
     detail: String,
@@ -294,4 +313,8 @@ struct CreateEnvResponseError {
 pub struct EnvListFilters {
     pub name: Option<String>,
 }
+
+#[derive(Debug, Serialize)]
+pub struct ProjectRequest {
+    pub name: String,
 }

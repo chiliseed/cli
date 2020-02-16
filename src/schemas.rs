@@ -28,3 +28,11 @@ pub struct ExecLog {
     pub component_id: String,
     pub ended_at: DateTime<Utc>,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct Project {
+    pub slug: String,
+    pub name: String,
+    pub last_status: Status,
+    pub environment: Env,
+}
