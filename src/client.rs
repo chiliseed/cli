@@ -188,8 +188,12 @@ impl APIClient {
         }
     }
 
-    pub fn list_envs(&self) -> APIResult<Vec<Env>> {
-        let (response_body, status_code) = self.get("/api/environments/")?;
+    pub fn list_envs(&self, filters: Option<&EnvListFilters>) -> APIResult<Vec<Env>> {
+        let endpoint = "/api/environments/";
+        let (response_body, status_code) = match filters {
+            Some(f) => self.get_with_query_params(endpoint, f)?,
+            None => self.get(endpoint)?,
+        };
 
         let envs: Vec<Env> = serde_json::from_str(&response_body).map_err(|err| {
             if status_code.is_server_error() {
@@ -243,6 +247,9 @@ impl APIClient {
         let log: ExecLog = serde_json::from_str(&response_body).unwrap();
         Ok(log)
     }
+#[derive(Debug, Deserialize)]
+struct APIError {
+    detail: String,
 }
 
 #[derive(Serialize)]
@@ -283,7 +290,8 @@ struct CreateEnvResponseError {
     domain: Option<Vec<String>>,
 }
 
-#[derive(Debug, Deserialize)]
-struct APIError {
-    detail: String,
+#[derive(Debug, Serialize)]
+pub struct EnvListFilters {
+    pub name: Option<String>,
+}
 }
