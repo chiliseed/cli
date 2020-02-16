@@ -157,6 +157,18 @@ impl APIClient {
         Ok((body.to_owned(), status))
     }
 
+    fn get_with_query_params<T: Serialize>(
+        &self,
+        endpoint: &str,
+        query: &T,
+    ) -> APIResult<(ResponseBody, StatusCode)> {
+        let url = get_url(&self.api_host, endpoint)?;
+        let resp = self.client.get(&url).query(&query).send()?;
+        let status = resp.status();
+        let body = resp.text().unwrap();
+        Ok((body.to_owned(), status))
+    }
+
     fn post<T: Serialize>(
         &self,
         endpoint: &str,
