@@ -65,6 +65,27 @@ fn get_url(base_url: &str, endpoint: &str) -> APIResult<String> {
     Ok(url.to_string())
 }
 
+fn deserialize_body<'de, T>(body: &'de str, status: StatusCode) -> Result<T, APIClientError>
+where
+    T: Deserialize<'de>,
+{
+    serde_json::from_str(body).map_err(|err| {
+        if status.is_server_error() {
+            let api_err: Result<APIError, _> = serde_json::from_str(body);
+            match api_err {
+                Ok(api_err) => {
+                    error!("{}", api_err.detail);
+                    APIClientError::HTTPRequestError(api_err.detail)
+                }
+                Err(err) => APIClientError::DeSerializerError(err.to_string()),
+            }
+        } else {
+            error!("{}", err.to_string());
+            APIClientError::DeSerializerError(err.to_string())
+        }
+    })
+}
+
 impl APIClient {
     pub fn new() -> APIResult<APIClient> {
         let username = match env::var("CHILISEED_USERNAME") {
@@ -194,50 +215,32 @@ impl APIClient {
             None => self.get(endpoint)?,
         };
 
-        let envs: Vec<Env> = serde_json::from_str(&response_body).map_err(|err| {
-            if status_code.is_server_error() {
-                let api_err: APIError = serde_json::from_str(&response_body)
-                    .map_err(|err| APIClientError::DeSerializerError(err.to_string()))
-                    .unwrap();
-                error!("{}", api_err.detail);
-                return APIClientError::HTTPRequestError(api_err.detail);
-            }
-            error!("{}", err.to_string());
-            APIClientError::DeSerializerError("Failed to parse error response".to_string())
-        })?;
+        let envs: Vec<Env> = deserialize_body(&response_body, status_code)?;
         Ok(envs)
     }
 
     pub fn create_env(&self, env: &CreateEnvRequest) -> APIResult<CreateEnvResponse> {
         let (response_body, status_code) = self.post("/api/environments/create", Some(env))?;
 
-        debug!("response body {}", response_body);
-
-        let env: CreateEnvResponse = serde_json::from_str(&response_body).map_err(|err| {
-            if status_code.is_server_error() {
-                let api_err: APIError = serde_json::from_str(&response_body)
-                    .map_err(|_err| APIClientError::DeSerializerError(err.to_string()))
-                    .unwrap();
-                error!("{}", api_err.detail);
-                return APIClientError::HTTPRequestError(api_err.detail);
-            }
-            if status_code.is_client_error() {
-                let api_err: CreateEnvResponseError = serde_json::from_str(&response_body)
-                    .map_err(|err| APIClientError::DeSerializerError(err.to_string()))
-                    .unwrap();
-                if let Some(name_err) = api_err.name {
-                    return APIClientError::HTTPRequestError(name_err[0].to_owned());
+        let env: CreateEnvResponse =
+            deserialize_body(&response_body, status_code).map_err(|err| {
+                if status_code.is_client_error() {
+                    let api_err: CreateEnvResponseError = serde_json::from_str(&response_body)
+                        .map_err(|err| APIClientError::DeSerializerError(err.to_string()))
+                        .unwrap();
+                    if let Some(name_err) = api_err.name {
+                        return APIClientError::HTTPRequestError(name_err[0].to_owned());
+                    }
+                    if let Some(domain_err) = api_err.domain {
+                        return APIClientError::HTTPRequestError(domain_err[0].to_owned());
+                    }
+                    if let Some(region_err) = api_err.region {
+                        return APIClientError::HTTPRequestError(region_err[0].to_owned());
+                    }
                 }
-                if let Some(domain_err) = api_err.domain {
-                    return APIClientError::HTTPRequestError(domain_err[0].to_owned());
-                }
-                if let Some(region_err) = api_err.region {
-                    return APIClientError::HTTPRequestError(region_err[0].to_owned());
-                }
-            }
-            error!("{}", err.to_string());
-            APIClientError::DeSerializerError("Failed to parse error response".to_string())
-        })?;
+                error!("{}", err.to_string());
+                APIClientError::DeSerializerError("Failed to parse error response".to_string())
+            })?;
         Ok(env)
     }
 
@@ -251,19 +254,20 @@ impl APIClient {
         let (response_body, status) =
             self.get(&format!("/api/environment/{}/projects", env_slug))?;
 
-        let projects: Vec<Project> = serde_json::from_str(&response_body).map_err(|err| {
-            if status.is_server_error() {
-                let api_err: APIError = serde_json::from_str(&response_body)
-                    .map_err(|err| APIClientError::DeSerializerError(err.to_string()))
-                    .unwrap();
-                error!("{}", api_err.detail);
-                return APIClientError::HTTPRequestError(api_err.detail);
-            }
-            error!("{}", err.to_string());
-            APIClientError::DeSerializerError("Failed to parse error response".to_string())
-        })?;
+        let projects: Vec<Project> = deserialize_body(&response_body, status)?;
         Ok(projects)
     }
+
+    //    pub fn create_project(
+    //        &self,
+    //        project: &Project,
+    //        env_slug: &str,
+    //    ) -> APIResult<CreateProjectResponse> {
+    //        let (response_body, status) = self.post(
+    //            &format!("/api/environment/{}}/projects/", env_slug),
+    //            Some(project),
+    //        )?;
+    //    }
 }
 
 #[derive(Debug, Deserialize)]
