@@ -25,6 +25,7 @@ pub enum Command {
     #[structopt(name = "project", about = "Management commands for projects")]
     Project {
         /// Name of the environment hosting the project(s)
+        #[structopt(short, long = "environment")]
         environment_name: Option<String>,
         #[structopt(subcommand)]
         cmd: ProjectSubCommands,
@@ -46,6 +47,10 @@ pub enum EnvSubCommands {
 pub enum ProjectSubCommands {
     /// List projects for environment
     List {},
+    Create {
+        /// Name for the project infra to create. Example: backend_api
+        name: Option<String>,
+    },
 }
 
 #[derive(Debug, StructOpt)]

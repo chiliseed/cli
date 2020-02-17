@@ -199,11 +199,13 @@ impl APIClient {
             let req = self.client.post(&url).json(data).send()?;
             let status = req.status();
             let body = req.text().unwrap();
+            debug!("server response {}", body);
             Ok((body, status))
         } else {
             let req = self.client.post(&url).send()?;
             let status = req.status();
             let body = req.text().unwrap();
+            debug!("server response {}", body);
             Ok((body, status))
         }
     }
@@ -244,30 +246,40 @@ impl APIClient {
         Ok(env)
     }
 
-    pub fn get_exec_log(&self, slug: String) -> APIResult<ExecLog> {
+    pub fn get_exec_log(&self, slug: &str) -> APIResult<ExecLog> {
         let (response_body, _) = self.get(&format!("/api/execution/status/{}", slug))?;
         let log: ExecLog = serde_json::from_str(&response_body).unwrap();
         Ok(log)
     }
 
-    pub fn list_projects(&self, env_slug: &str) -> APIResult<Vec<Project>> {
-        let (response_body, status) =
-            self.get(&format!("/api/environment/{}/projects", env_slug))?;
+    pub fn list_projects(
+        &self,
+        env_slug: &str,
+        filter: Option<&ProjectListFilters>,
+    ) -> APIResult<Vec<Project>> {
+        let url = format!("/api/environment/{}/projects", env_slug);
+        let (response_body, status) = match filter {
+            Some(query) => self.get_with_query_params(&url, query)?,
+            None => self.get(&url)?,
+        };
 
         let projects: Vec<Project> = deserialize_body(&response_body, status)?;
         Ok(projects)
     }
 
-    //    pub fn create_project(
-    //        &self,
-    //        project: &Project,
-    //        env_slug: &str,
-    //    ) -> APIResult<CreateProjectResponse> {
-    //        let (response_body, status) = self.post(
-    //            &format!("/api/environment/{}}/projects/", env_slug),
-    //            Some(project),
-    //        )?;
-    //    }
+    pub fn create_project(
+        &self,
+        project: &ProjectRequest,
+        env_slug: &str,
+    ) -> APIResult<CreateProjectResponse> {
+        let (response_body, status) = self.post(
+            &format!("/api/environment/{}/projects/", env_slug),
+            Some(project),
+        )?;
+
+        let project: CreateProjectResponse = deserialize_body(&response_body, status)?;
+        Ok(project)
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -320,5 +332,16 @@ pub struct EnvListFilters {
 
 #[derive(Debug, Serialize)]
 pub struct ProjectRequest {
+    pub name: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateProjectResponse {
+    pub project: Project,
+    pub log: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ProjectListFilters {
     pub name: String,
 }

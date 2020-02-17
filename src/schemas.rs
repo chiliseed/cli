@@ -23,10 +23,10 @@ pub struct Env {
 pub struct ExecLog {
     pub slug: String,
     pub action: String,
-    pub is_success: bool,
+    pub is_success: Option<bool>,
     pub component: String,
-    pub component_id: String,
-    pub ended_at: DateTime<Utc>,
+    pub component_slug: String,
+    pub ended_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Deserialize)]

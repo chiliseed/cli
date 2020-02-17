@@ -1,6 +1,3 @@
-use std::thread::sleep;
-use std::time::Duration;
-
 use rusoto_core::Region;
 use rusoto_credential::{
     AwsCredentials, CredentialsError, EnvironmentProvider, ProvideAwsCredentials,
@@ -9,6 +6,7 @@ use text_io::read;
 use tokio;
 
 use crate::client::{APIClient, CreateEnvRequest};
+use crate::utils::await_exec_result;
 
 #[tokio::main]
 async fn get_aws_credentials() -> Result<AwsCredentials, CredentialsError> {
@@ -43,40 +41,7 @@ pub fn add(api_client: &APIClient, name: Option<String>, domain: Option<String>)
     };
 
     match api_client.create_env(&req) {
-        Ok(resp) => {
-            println!("Launching environment: {}", resp.env.name);
-            let timeout_minutes = 30;
-            let mut waited = 0;
-            loop {
-                if waited >= timeout_minutes * 60 {
-                    eprintln!("TIMING OUT after 30 minutes. Please contact support for help");
-                    return;
-                }
-
-                sleep(Duration::from_secs(30));
-                waited += 30;
-
-                println!("Checking create status");
-
-                match api_client.get_exec_log(resp.log.clone()) {
-                    Ok(exec_log) => {
-                        debug!("{:?}", exec_log);
-
-                        if exec_log.is_success {
-                            println!("Environment is ready after {}s", waited);
-                            return;
-                        }
-
-                        println!("Still creating [{}s]", waited);
-                        continue;
-                    }
-                    Err(_err) => {
-                        eprintln!("Error checking status");
-                        return;
-                    }
-                }
-            }
-        }
+        Ok(resp) => await_exec_result(api_client, &resp.log),
         Err(err) => {
             eprintln!("Error creating environment: {}", err.to_string());
         }

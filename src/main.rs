@@ -3,6 +3,7 @@ mod commands;
 mod environments;
 mod projects;
 mod schemas;
+mod utils;
 
 use std::process::exit;
 
@@ -47,7 +48,14 @@ fn main() {
         } => match cmd {
             ProjectSubCommands::List {} => {
                 info!("Getting list of project");
-                projects::list_projects(&api_client, environment_name);
+                let env_name = projects::get_environment(environment_name);
+                projects::list_projects(&api_client, env_name);
+            }
+
+            ProjectSubCommands::Create { name } => {
+                info!("Creating project");
+                let env_name = projects::get_environment(environment_name);
+                projects::create_project(&api_client, env_name, name);
             }
         },
     }
