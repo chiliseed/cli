@@ -3,6 +3,7 @@ mod commands;
 mod environments;
 mod projects;
 mod schemas;
+mod services;
 mod utils;
 
 use std::process::exit;
@@ -12,7 +13,7 @@ extern crate log;
 use structopt::StructOpt;
 
 use client::APIClient;
-use commands::{Command, EnvSubCommands, Opt, ProjectSubCommands};
+use commands::{Command, EnvSubCommands, Opt, ProjectSubCommands, ServiceSubCommands};
 
 fn main() {
     pretty_env_logger::try_init_custom_env("CHILISEED_LOG")
@@ -48,14 +49,27 @@ fn main() {
         } => match cmd {
             ProjectSubCommands::List {} => {
                 info!("Getting list of project");
-                let env_name = projects::get_environment(environment_name);
-                projects::list_projects(&api_client, env_name);
+                let env_name = projects::get_env_name(environment_name);
+                projects::list_projects(&api_client, &env_name);
             }
 
             ProjectSubCommands::Create { name } => {
                 info!("Creating project");
-                let env_name = projects::get_environment(environment_name);
-                projects::create_project(&api_client, env_name, name);
+                let env_name = projects::get_env_name(environment_name);
+                projects::create_project(&api_client, &env_name, name);
+            }
+        },
+
+        Command::Service {
+            environment_name,
+            project_name,
+            cmd,
+        } => match cmd {
+            ServiceSubCommands::List {} => {
+                info!("Getting services for project");
+                let env_name = projects::get_env_name(environment_name);
+                let project_name = projects::get_project_name(project_name);
+                services::list_services(&api_client, &env_name, &project_name);
             }
         },
     }

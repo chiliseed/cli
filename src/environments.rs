@@ -1,3 +1,6 @@
+use std::error::Error;
+use std::fmt;
+
 use rusoto_core::Region;
 use rusoto_credential::{
     AwsCredentials, CredentialsError, EnvironmentProvider, ProvideAwsCredentials,
@@ -5,8 +8,32 @@ use rusoto_credential::{
 use text_io::read;
 use tokio;
 
-use crate::client::{APIClient, CreateEnvRequest};
+use crate::client::{APIClient, CreateEnvRequest, EnvListFilters};
+use crate::schemas::Env;
 use crate::utils::await_exec_result;
+
+#[derive(Debug)]
+pub enum EnvError {
+    EnvNotFound(String),
+    ErrorGettingEnv(String),
+}
+
+impl Error for EnvError {
+    fn description(&self) -> &str {
+        match *self {
+            EnvError::EnvNotFound(ref cause) => cause,
+            EnvError::ErrorGettingEnv(ref cause) => cause,
+        }
+    }
+}
+
+impl fmt::Display for EnvError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.description())
+    }
+}
+
+pub type EnvResult<T> = Result<T, EnvError>;
 
 #[tokio::main]
 async fn get_aws_credentials() -> Result<AwsCredentials, CredentialsError> {
@@ -62,5 +89,24 @@ pub fn list_envs(api_client: &APIClient) {
         }
 
         Err(_err) => eprintln!("Error getting envs"),
+    }
+}
+
+pub fn get_env(api_client: &APIClient, env_name: &str) -> EnvResult<Env> {
+    match api_client.list_envs(Some(&EnvListFilters {
+        name: Some(env_name.to_string()),
+    })) {
+        Ok(envs) => {
+            if envs.is_empty() {
+                println!("Environment not found. Please check the name and try again.");
+                return Err(EnvError::EnvNotFound(format!(
+                    "Environment {} not found",
+                    env_name
+                )));
+            }
+            return Ok(envs[0].clone());
+        }
+
+        Err(_err) => Err(EnvError::ErrorGettingEnv("Error getting envs".to_string())),
     }
 }

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use text_io::read;
 use url::{ParseError, Url};
 
-use crate::schemas::{Env, ExecLog, Project};
+use crate::schemas::{Env, ExecLog, Project, Service};
 
 const API_HOST: &str = "http://localhost:8000";
 
@@ -279,6 +279,13 @@ impl APIClient {
 
         let project: CreateProjectResponse = deserialize_body(&response_body, status)?;
         Ok(project)
+    }
+
+    pub fn list_services(&self, project_slug: &str) -> APIResult<Vec<Service>> {
+        let endpoint = format!("/api/project/{}/services/", project_slug);
+        let (response_body, status) = self.get(&endpoint)?;
+        let projects: Vec<Service> = deserialize_body(&response_body, status)?;
+        Ok(projects)
     }
 }
 

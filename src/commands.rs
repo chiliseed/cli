@@ -30,6 +30,18 @@ pub enum Command {
         #[structopt(subcommand)]
         cmd: ProjectSubCommands,
     },
+
+    #[structopt(name = "service", about = "Management commands for services")]
+    Service {
+        /// Name of the environment hosting the project
+        #[structopt(short, long = "environment")]
+        environment_name: Option<String>,
+        /// Name of the project to which the service(s) is(are) related
+        #[structopt(short, long = "project")]
+        project_name: Option<String>,
+        #[structopt(subcommand)]
+        cmd: ServiceSubCommands,
+    },
 }
 
 #[derive(Debug, StructOpt)]
@@ -48,21 +60,31 @@ pub enum ProjectSubCommands {
     /// List projects for environment
     List {},
     Create {
-        /// Name for the project infra to create. Example: backend_api
+        /// Name for the project infra to create. Example: backend
         name: Option<String>,
     },
 }
 
 #[derive(Debug, StructOpt)]
-pub enum ServiceSubCommand {
-    #[structopt(name = "add", about = "Add new service in cluster")]
-    Add {
-        /// The name of the service to add
-        service_name: String,
-        /// The name of the cluster in which to launch the service
-        cluster_name: String,
-        /// Port on which this service will listen to traffic
-        #[structopt(short, long)]
-        port: Option<i64>,
-    },
+pub enum ServiceSubCommands {
+    /// List services for project in environment
+    List {},
+    // Create {
+    //     /// Name of the service for which to create the infra. Example: api
+    //     name: Option<String>,
+    // },
 }
+
+// #[derive(Debug, StructOpt)]
+// pub enum ServiceSubCommand {
+//     #[structopt(name = "add", about = "Add new service in cluster")]
+//     Add {
+//         /// The name of the service to add
+//         service_name: String,
+//         /// The name of the cluster in which to launch the service
+//         cluster_name: String,
+//         /// Port on which this service will listen to traffic
+//         #[structopt(short, long)]
+//         port: Option<i64>,
+//     },
+// }
