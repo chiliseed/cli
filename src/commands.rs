@@ -69,10 +69,7 @@ pub enum ProjectSubCommands {
 pub enum ServiceSubCommands {
     /// List services for project in environment
     List {},
-    // Create {
-    //     /// Name of the service for which to create the infra. Example: api
-    //     name: Option<String>,
-    // },
+    Create {},
 }
 
 // #[derive(Debug, StructOpt)]

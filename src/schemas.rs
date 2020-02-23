@@ -42,8 +42,8 @@ pub struct Service {
     pub slug: String,
     pub name: String,
     pub subdomain: String,
-    pub container_port: String,
-    pub alb_port_http: String,
-    pub alb_port_https: String,
+    pub container_port: u32,
+    pub alb_port_http: u32,
+    pub alb_port_https: u32,
     pub health_check_endpoint: String,
 }

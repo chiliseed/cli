@@ -71,6 +71,16 @@ fn main() {
                 let project_name = projects::get_project_name(project_name);
                 services::list_services(&api_client, &env_name, &project_name);
             }
+
+            ServiceSubCommands::Create {} => {
+                let env_name = projects::get_env_name(environment_name);
+                let project_name = projects::get_project_name(project_name);
+                info!(
+                    "Creating service for project: {}({})",
+                    project_name, env_name
+                );
+                services::create_service(&api_client, &env_name, &project_name);
+            }
         },
     }
 }
