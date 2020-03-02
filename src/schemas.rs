@@ -46,4 +46,14 @@ pub struct Service {
     pub alb_port_http: u32,
     pub alb_port_https: u32,
     pub health_check_endpoint: String,
+    pub ecr_repo_url: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Worker {
+    pub slug: String,
+    pub is_ready: bool,
+    pub ssh_key: String,
+    pub ssh_key_name: String,
+    pub public_ip: String,
 }

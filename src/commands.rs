@@ -70,6 +70,10 @@ pub enum ServiceSubCommands {
     /// List services for project in environment
     List {},
     Create {},
+    Deploy {
+        /// Name of the service to deploy
+        name: String,
+    },
 }
 
 // #[derive(Debug, StructOpt)]

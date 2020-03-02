@@ -68,7 +68,9 @@ pub fn add(api_client: &APIClient, name: Option<String>, domain: Option<String>)
     };
 
     match api_client.create_env(&req) {
-        Ok(resp) => await_exec_result(api_client, &resp.log),
+        Ok(resp) => {
+            await_exec_result(api_client, &resp.log);
+        }
         Err(err) => {
             eprintln!("Error creating environment: {}", err.to_string());
         }

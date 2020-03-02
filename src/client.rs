@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use text_io::read;
 use url::{ParseError, Url};
 
-use crate::schemas::{Env, ExecLog, Project, Service};
+use crate::schemas::{Env, ExecLog, Project, Service, Worker};
 
 const API_HOST: &str = "http://localhost:8000";
 
@@ -53,8 +53,6 @@ pub type APIResult<T> = Result<T, APIClientError>;
 type ResponseBody = String;
 
 pub struct APIClient {
-    username: String,
-    password: String,
     api_host: String,
     pub client: blocking::Client,
 }
@@ -162,8 +160,6 @@ impl APIClient {
             .unwrap();
 
         Ok(APIClient {
-            username,
-            password,
             api_host: api_host.to_string(),
             client: api_client,
         })
@@ -293,9 +289,16 @@ impl APIClient {
         Ok(project)
     }
 
-    pub fn list_services(&self, project_slug: &str) -> APIResult<Vec<Service>> {
+    pub fn list_services(
+        &self,
+        project_slug: &str,
+        filters: Option<&ServiceListFilter>,
+    ) -> APIResult<Vec<Service>> {
         let endpoint = format!("/api/project/{}/services/", project_slug);
-        let (response_body, status) = self.get(&endpoint)?;
+        let (response_body, status) = match filters {
+            Some(query) => self.get_with_query_params(&endpoint, query)?,
+            None => self.get(&endpoint)?,
+        };
         let projects: Vec<Service> = deserialize_body(&response_body, status)?;
         Ok(projects)
     }
@@ -323,6 +326,27 @@ impl APIClient {
         let service: CreateServiceResponse = deserialize_body(&response, status)?;
         Ok(service)
     }
+
+    pub fn launch_worker(
+        &self,
+        worker: &LaunchWorkerRequest,
+        service_slug: &str,
+    ) -> APIResult<LaunchWorkerResponse> {
+        let (response, status) = self.post(
+            &format!("/api/service/{}/build", service_slug),
+            Some(worker),
+        )?;
+        let worker: LaunchWorkerResponse = deserialize_body(&response, status)?;
+        Ok(worker)
+    }
+
+    pub fn get_worker_details(&self, worker_slug: &str) -> APIResult<Worker> {
+        let (response, status) = self.get(&format!("/api/worker/{}", worker_slug))?;
+        let worker: Worker = deserialize_body(&response, status)?;
+        Ok(worker)
+    }
+
+    // pub fn deploy_service(&self, )
 }
 
 #[derive(Debug, Deserialize)]
@@ -407,12 +431,22 @@ pub struct CreateServiceResponse {
 
 #[derive(Debug, Serialize)]
 pub struct ServiceListFilter {
-    pub name: Option<String>,
-    pub subdomain: Option<String>,
+    pub name: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct CanCreateServiceResponse {
     pub can_create: bool,
     pub reason: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct LaunchWorkerRequest {
+    pub version: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LaunchWorkerResponse {
+    pub build: String,
+    pub log: Option<String>,
 }

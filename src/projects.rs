@@ -113,7 +113,7 @@ pub fn create_project(api_client: &APIClient, env_name: &str, project_name: Opti
         };
 
         println!("Launching project infra: {}", p_name);
-        await_exec_result(api_client, &run_slug)
+        await_exec_result(api_client, &run_slug);
     })
 }
 
