@@ -14,7 +14,8 @@ use uuid::Uuid;
 use walkdir::WalkDir;
 
 use crate::client::{
-    APIClient, APIClientError, CreateServiceRequest, LaunchWorkerRequest, ServiceListFilter,
+    APIClient, APIClientError, CreateServiceRequest, LaunchWorkerRequest, ServiceDeployRequest,
+    ServiceListFilter,
 };
 use crate::environments::{get_env, EnvError};
 use crate::projects::{get_project, ProjectError};
@@ -314,9 +315,8 @@ pub fn deploy(api_client: &APIClient, env_name: &str, project_name: &str, servic
             return;
         }
     };
-    // todo remove _build and build tarball
 
-    // todo unpack the tarball on server
+    // unpack the tarball on server
     match unpack_and_build_tarball(&ssh_conn, &build_tarball) {
         Ok(()) => println!("Build extracted"),
         Err(err) => {
@@ -324,8 +324,23 @@ pub fn deploy(api_client: &APIClient, env_name: &str, project_name: &str, servic
             return;
         }
     }
-    // todo trigger build_and_push.py on worker server
-    // todo trigger deploy service
+
+    // trigger deploy service
+    let run_slug = match api_client.deploy_service(
+        &service.slug,
+        &ServiceDeployRequest {
+            version: version_sha.trim().to_string(),
+        },
+    ) {
+        Ok(resp) => resp.log,
+        Err(err) => {
+            eprintln!("Error: {}", err);
+            return;
+        }
+    };
+
+    println!("Deploying service: {}", service.name);
+    await_exec_result(api_client, &run_slug);
 }
 
 fn unpack_and_build_tarball(ssh_conn: &Session, build_tarball: &str) -> ServiceResult<()> {
@@ -342,6 +357,11 @@ fn unpack_and_build_tarball(ssh_conn: &Session, build_tarball: &str) -> ServiceR
             build_tarball, BUILD_WORKER_USER
         ),
     )?;
+
+    debug!("Removing build tarball");
+    fs::remove_file(build_tarball)?;
+    debug!("Removing build directory");
+    fs::remove_dir_all(BUILD_LOCATION)?;
 
     exec_cmd_on_server(
         ssh_conn,

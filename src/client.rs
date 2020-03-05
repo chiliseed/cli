@@ -346,7 +346,18 @@ impl APIClient {
         Ok(worker)
     }
 
-    // pub fn deploy_service(&self, )
+    pub fn deploy_service(
+        &self,
+        service_slug: &str,
+        payload: &ServiceDeployRequest,
+    ) -> APIResult<ServiceDeployResponse> {
+        let (response, status) = self.post(
+            &format!("/api/service/{}/deploy", service_slug),
+            Some(payload),
+        )?;
+        let deployment: ServiceDeployResponse = deserialize_body(&response, status)?;
+        Ok(deployment)
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -449,4 +460,15 @@ pub struct LaunchWorkerRequest {
 pub struct LaunchWorkerResponse {
     pub build: String,
     pub log: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ServiceDeployRequest {
+    pub version: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ServiceDeployResponse {
+    pub deployment: String,
+    pub log: String,
 }
