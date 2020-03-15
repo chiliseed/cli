@@ -1,4 +1,3 @@
-use globset::{Glob, GlobSetBuilder};
 use std::error::Error;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Write};
@@ -8,6 +7,7 @@ use std::{fmt, fs, io};
 
 use flate2::write::GzEncoder;
 use flate2::Compression;
+use globset::{Glob, GlobSetBuilder};
 use ssh2::Session;
 use text_io::read;
 use uuid::Uuid;
