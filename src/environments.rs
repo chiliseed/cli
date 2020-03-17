@@ -18,18 +18,11 @@ pub enum EnvError {
     ErrorGettingEnv(String),
 }
 
-impl Error for EnvError {
-    fn description(&self) -> &str {
-        match *self {
-            EnvError::EnvNotFound(ref cause) => cause,
-            EnvError::ErrorGettingEnv(ref cause) => cause,
-        }
-    }
-}
+impl Error for EnvError {}
 
 impl fmt::Display for EnvError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.description())
+        write!(f, "{}", self.to_string())
     }
 }
 

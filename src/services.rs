@@ -33,21 +33,11 @@ enum ServiceError {
 
 type ServiceResult<T> = Result<T, ServiceError>;
 
-impl Error for ServiceError {
-    fn description(&self) -> &str {
-        match *self {
-            ServiceError::EnvError(ref err) => err.description(),
-            ServiceError::ProjectError(ref err) => err.description(),
-            ServiceError::APIError(ref err) => err.description(),
-            ServiceError::ServicesNotFound(ref cause) => cause,
-            ServiceError::DeploymentError(ref cause) => cause,
-        }
-    }
-}
+impl Error for ServiceError {}
 
 impl fmt::Display for ServiceError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.description())
+        write!(f, "{}", self.to_string())
     }
 }
 
@@ -173,24 +163,6 @@ pub fn create_service(api_client: &APIClient, env_name: &str, project_name: &str
         alb_port_https,
         health_check_endpoint,
     };
-
-    match api_client.check_can_create_service(&project.slug, &service) {
-        Ok(resp) => {
-            if resp.can_create {
-                debug!("Can create this service");
-            } else {
-                debug!("Cannot create this service");
-                eprintln!("{}", resp.reason.unwrap());
-                return;
-            }
-        }
-
-        Err(err) => {
-            eprintln!("Cannot check if service can be created. Please try again later.");
-            debug!("Error: {}", err.to_string());
-            return;
-        }
-    }
 
     let run_slug = match api_client.create_service(&service, &project.slug) {
         Ok(resp) => resp.log,

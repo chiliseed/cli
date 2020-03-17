@@ -21,14 +21,14 @@ pub enum APIClientError {
 }
 
 impl Error for APIClientError {
-    fn description(&self) -> &str {
-        match *self {
-            APIClientError::HTTPRequestError(ref cause) => cause,
-            APIClientError::HTTPTimeoutError(ref cause) => cause,
-            APIClientError::DeSerializerError(ref cause) => cause,
-            APIClientError::URLParseError(ref err) => Error::description(err),
-        }
-    }
+    // fn description(&self) -> &str {
+    //     match *self {
+    //         APIClientError::HTTPRequestError(ref cause) => cause,
+    //         APIClientError::HTTPTimeoutError(ref cause) => cause,
+    //         APIClientError::DeSerializerError(ref cause) => cause,
+    //         APIClientError::URLParseError(ref err) => Error::description(err),
+    //     }
+    // }
 }
 
 impl From<ParseError> for APIClientError {
@@ -45,7 +45,7 @@ impl From<reqwest::Error> for APIClientError {
 
 impl fmt::Display for APIClientError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.description())
+        write!(f, "{}", self.to_string())
     }
 }
 
@@ -185,18 +185,6 @@ impl APIClient {
         Ok((body.to_owned(), status))
     }
 
-    fn get_with_body<T: Serialize>(
-        &self,
-        endpoint: &str,
-        params: &T,
-    ) -> APIResult<(ResponseBody, StatusCode)> {
-        let url = get_url(&self.api_host, endpoint)?;
-        let resp = self.client.get(&url).json(&params).send()?;
-        let status = resp.status();
-        let body = resp.text().unwrap();
-        Ok((body.to_owned(), status))
-    }
-
     fn post<T: Serialize>(
         &self,
         endpoint: &str,
@@ -301,17 +289,6 @@ impl APIClient {
         };
         let projects: Vec<Service> = deserialize_body(&response_body, status)?;
         Ok(projects)
-    }
-
-    pub fn check_can_create_service(
-        &self,
-        project_slug: &str,
-        params: &CreateServiceRequest,
-    ) -> APIResult<CanCreateServiceResponse> {
-        let endpoint = format!("/api/project/{}/services/can-create", project_slug);
-        let (response, status) = self.get_with_body(&endpoint, params)?;
-        let resp: CanCreateServiceResponse = deserialize_body(&response, status)?;
-        Ok(resp)
     }
 
     pub fn create_service(

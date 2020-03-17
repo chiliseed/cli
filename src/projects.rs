@@ -13,18 +13,11 @@ pub enum ProjectError {
     ErrorGettingProject(String),
 }
 
-impl Error for ProjectError {
-    fn description(&self) -> &str {
-        match *self {
-            ProjectError::ProjectNotFound(ref cause) => cause,
-            ProjectError::ErrorGettingProject(ref cause) => cause,
-        }
-    }
-}
+impl Error for ProjectError {}
 
 impl fmt::Display for ProjectError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.description())
+        write!(f, "{}", self.to_string())
     }
 }
 
