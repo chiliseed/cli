@@ -89,6 +89,7 @@ fn get_services(
         Some(name) => api_client.list_services(&project.slug, Some(&ServiceListFilter { name }))?,
         None => api_client.list_services(&project.slug, None)?,
     };
+    debug!("services are {:?}", services);
     if services.is_empty() {
         Err(ServiceError::ServicesNotFound(
             "No services found".to_string(),
@@ -101,6 +102,11 @@ fn get_services(
 pub fn list_services(api_client: &APIClient, env_name: &str, project_name: &str) {
     match get_services(api_client, env_name, project_name, None) {
         Ok(services) => {
+            if services.is_empty() {
+                println!("Project has no services.");
+                return;
+            }
+
             println!("Project {} has following services: ", project_name);
             for service in services {
                 let ecr_repo_url = service.ecr_repo_url.unwrap();
@@ -235,8 +241,8 @@ pub fn deploy(api_client: &APIClient, env_name: &str, project_name: &str, servic
         Some(service_name.to_string()),
     ) {
         Ok(services) => services[0].clone(),
-        Err(err) => {
-            eprintln!("Error: {}", err);
+        Err(_err) => {
+            eprintln!("Service not found. Please check service name and try again.");
             return;
         }
     };

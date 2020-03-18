@@ -287,6 +287,7 @@ impl APIClient {
             Some(query) => self.get_with_query_params(&endpoint, query)?,
             None => self.get(&endpoint)?,
         };
+        debug!("server response: {}", response_body);
         let projects: Vec<Service> = deserialize_body(&response_body, status)?;
         Ok(projects)
     }
