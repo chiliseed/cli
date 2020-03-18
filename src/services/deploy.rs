@@ -1,231 +1,20 @@
-use std::error::Error;
+use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpStream;
 use std::path::Path;
-use std::{fmt, fs, io};
 
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use globset::{Glob, GlobSetBuilder};
 use ssh2::Session;
-use text_io::read;
 use uuid::Uuid;
 use walkdir::WalkDir;
 
-use crate::client::{
-    APIClient, APIClientError, CreateServiceRequest, LaunchWorkerRequest, ServiceDeployRequest,
-    ServiceListFilter,
-};
-use crate::environments::{get_env, EnvError};
-use crate::projects::{get_project, ProjectError};
-use crate::schemas::Service;
+use super::types::ServiceResult;
+use super::utils::get_services;
+use crate::client::{APIClient, LaunchWorkerRequest, ServiceDeployRequest};
 use crate::utils::{await_exec_result, exec_command_with_output};
-
-#[derive(Debug)]
-enum ServiceError {
-    EnvError(EnvError),
-    ProjectError(ProjectError),
-    ServicesNotFound(String),
-    APIError(APIClientError),
-    DeploymentError(String),
-}
-
-type ServiceResult<T> = Result<T, ServiceError>;
-
-impl Error for ServiceError {}
-
-impl fmt::Display for ServiceError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.to_string())
-    }
-}
-
-impl From<EnvError> for ServiceError {
-    fn from(err: EnvError) -> ServiceError {
-        ServiceError::EnvError(err)
-    }
-}
-
-impl From<APIClientError> for ServiceError {
-    fn from(err: APIClientError) -> ServiceError {
-        ServiceError::APIError(err)
-    }
-}
-
-impl From<ProjectError> for ServiceError {
-    fn from(err: ProjectError) -> ServiceError {
-        ServiceError::ProjectError(err)
-    }
-}
-
-impl From<io::Error> for ServiceError {
-    fn from(err: io::Error) -> ServiceError {
-        ServiceError::DeploymentError(err.to_string())
-    }
-}
-
-impl From<globset::Error> for ServiceError {
-    fn from(err: globset::Error) -> ServiceError {
-        ServiceError::DeploymentError(err.to_string())
-    }
-}
-
-impl From<ssh2::Error> for ServiceError {
-    fn from(err: ssh2::Error) -> ServiceError {
-        ServiceError::DeploymentError(err.to_string())
-    }
-}
-
-fn get_services(
-    api_client: &APIClient,
-    env_name: &str,
-    project_name: &str,
-    service_name: Option<String>,
-) -> ServiceResult<Vec<Service>> {
-    let env = get_env(api_client, env_name)?;
-    let project = get_project(api_client, &env.slug, project_name)?;
-    let services = match service_name {
-        Some(name) => api_client.list_services(&project.slug, Some(&ServiceListFilter { name }))?,
-        None => api_client.list_services(&project.slug, None)?,
-    };
-    debug!("services are {:?}", services);
-    if services.is_empty() {
-        Err(ServiceError::ServicesNotFound(
-            "No services found".to_string(),
-        ))
-    } else {
-        Ok(services)
-    }
-}
-
-pub fn list_services(api_client: &APIClient, env_name: &str, project_name: &str) {
-    match get_services(api_client, env_name, project_name, None) {
-        Ok(services) => {
-            if services.is_empty() {
-                println!("Project has no services.");
-                return;
-            }
-
-            println!("Project {} has following services: ", project_name);
-            for service in services {
-                let ecr_repo_url = service.ecr_repo_url.unwrap();
-                let ecr_parts: Vec<&str> = ecr_repo_url.split(".com").collect();
-                let ecr_repo_name = ecr_parts[1];
-                let aws_url_parts: Vec<&str> = ecr_repo_url.split(".").collect();
-                let region = aws_url_parts[3];
-                let account_id = aws_url_parts[0];
-                println!();
-                println!("{}", service.name);
-                println!("{}", std::iter::repeat("=").take(60).collect::<String>());
-                println!(
-                    "Subomain {} {}",
-                    std::iter::repeat(" ").take(9).collect::<String>(),
-                    service.subdomain
-                );
-                println!(
-                    "Container Port {} {}",
-                    std::iter::repeat(" ").take(3).collect::<String>(),
-                    service.container_port
-                );
-                println!(
-                    "ALB HTTP Port {} {}",
-                    std::iter::repeat(" ").take(4).collect::<String>(),
-                    service.alb_port_http
-                );
-                println!(
-                    "ALB HTTPS Port {} {}",
-                    std::iter::repeat(" ").take(3).collect::<String>(),
-                    service.alb_port_https
-                );
-                println!(
-                    "Healthcheck {} {}",
-                    std::iter::repeat(" ").take(6).collect::<String>(),
-                    service.alb_port_https
-                );
-                println!(
-                    "ECR Repo {} {}",
-                    std::iter::repeat(" ").take(9).collect::<String>(),
-                    ecr_repo_name
-                );
-                println!(
-                    "AWS Region {} {}",
-                    std::iter::repeat(" ").take(7).collect::<String>(),
-                    region
-                );
-                println!(
-                    "AWS Account {} {}",
-                    std::iter::repeat(" ").take(6).collect::<String>(),
-                    account_id
-                );
-            }
-        }
-
-        Err(ServiceError::ServicesNotFound(_err)) => {
-            println!(
-                "Project {} ({}) has no services yet.",
-                project_name, env_name
-            );
-            return;
-        }
-
-        Err(err) => {
-            eprintln!("Error: {}", err);
-        }
-    }
-}
-
-pub fn create_service(api_client: &APIClient, env_name: &str, project_name: &str) {
-    let env = match get_env(api_client, env_name) {
-        Ok(e) => e,
-        Err(err) => {
-            eprintln!("Error getting environment: {}", err);
-            return;
-        }
-    };
-    let project = match get_project(api_client, &env.slug, project_name) {
-        Ok(p) => p,
-        Err(err) => {
-            eprintln!("Error getting project: {}", err);
-            return;
-        }
-    };
-
-    println!("Your service name (example: api): ");
-    let name: String = read!();
-
-    println!("Your service subdomain (for example, for api.example.com, subdomain is `api`): ");
-    let subdomain: String = read!();
-
-    println!("On what port will your container listen (example: 8000): ");
-    let container_port: String = read!();
-
-    println!("On what port do you want the load balancer to listen for HTTP traffic for this service (example: 80): ");
-    let alb_port_http: String = read!();
-
-    println!("On what port do you want the load balancer to listen for HTTPS traffic for this service (example: 443): ");
-    let alb_port_https: String = read!();
-
-    println!("What is your health check endpoint (example: /api/health/check/): ");
-    let health_check_endpoint: String = read!();
-
-    let service = CreateServiceRequest {
-        name,
-        subdomain,
-        container_port,
-        alb_port_http,
-        alb_port_https,
-        health_check_endpoint,
-    };
-
-    let run_slug = match api_client.create_service(&service, &project.slug) {
-        Ok(resp) => resp.log,
-        Err(_) => return,
-    };
-
-    println!("Launching service infra: {}", service.name);
-    await_exec_result(api_client, &run_slug);
-}
 
 const BUILD_WORKER_USER: &str = "ubuntu";
 const BUILD_LOCATION: &str = "_build";
@@ -391,7 +180,7 @@ fn unpack_and_build_tarball(ssh_conn: &Session, build_tarball: &str) -> ServiceR
 
     exec_cmd_on_server(
         ssh_conn,
-        &format!("python3.8 /home/{}/build_and_push.py", BUILD_WORKER_USER),
+        &format!("/home/{}/chiliseed-build-worker", BUILD_WORKER_USER),
     )?;
 
     Ok(())
