@@ -69,10 +69,12 @@ pub enum ProjectSubCommands {
 pub enum ServiceSubCommands {
     /// List services for project in environment
     List {},
+    /// Register new service and created it's infrastructure
     Create {},
+    /// Deploy new version of the service
     Deploy {
         /// Name of the service to deploy
-        name: String,
+        service_name: String,
     },
 }
 

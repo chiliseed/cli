@@ -82,11 +82,11 @@ fn main() {
                 services::create_service(&api_client, &env_name, &project_name);
             }
 
-            ServiceSubCommands::Deploy { name } => {
+            ServiceSubCommands::Deploy { service_name } => {
                 let env_name = projects::get_env_name(environment_name);
                 let project_name = projects::get_project_name(project_name);
-                info!("Deploying service: {}", name);
-                services::deploy(&api_client, &env_name, &project_name, &name);
+                info!("Deploying service: {}", service_name);
+                services::deploy(&api_client, &env_name, &project_name, &service_name);
             }
         },
     }
