@@ -1,5 +1,6 @@
 mod client;
 mod commands;
+mod env_vars;
 mod environments;
 mod projects;
 mod schemas;
