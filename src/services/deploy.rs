@@ -30,7 +30,8 @@ pub fn deploy(api_client: &APIClient, env_name: &str, project_name: &str, servic
         Some(service_name.to_string()),
     ) {
         Ok(services) => services[0].clone(),
-        Err(_err) => {
+        Err(err) => {
+            debug!("Error: {}", err.to_string());
             eprintln!("Service not found. Please check service name and try again.");
             return;
         }
