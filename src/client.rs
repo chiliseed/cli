@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use text_io::read;
 use url::{ParseError, Url};
 
-use crate::schemas::{Env, ExecLog, Project, Service, Worker};
+use crate::schemas::{Env, EnvVariable, ExecLog, Project, Service, Worker};
 
 const API_HOST: &str = "http://localhost:8000";
 
@@ -173,6 +173,14 @@ impl APIClient {
         Ok((body.to_owned(), status))
     }
 
+    fn delete(&self, endpoint: &str) -> APIResult<(ResponseBody, StatusCode)> {
+        let url = get_url(&self.api_host, endpoint)?;
+        let resp = self.client.delete(&url).send()?;
+        let status = resp.status();
+        let body = resp.text().unwrap();
+        Ok((body.to_owned(), status))
+    }
+
     fn get_with_query_params<T: Serialize>(
         &self,
         endpoint: &str,
@@ -204,6 +212,19 @@ impl APIClient {
             debug!("server response {}", body);
             Ok((body, status))
         }
+    }
+
+    fn patch<T: Serialize>(
+        &self,
+        endpoint: &str,
+        payload: &T,
+    ) -> APIResult<(ResponseBody, StatusCode)> {
+        let url = get_url(&self.api_host, endpoint)?;
+        let req = self.client.patch(&url).json(payload).send()?;
+        let status = req.status();
+        let body = req.text().unwrap();
+        debug!("server response {}", body);
+        Ok((body, status))
     }
 
     pub fn list_envs(&self, filters: Option<&EnvListFilters>) -> APIResult<Vec<Env>> {
@@ -336,6 +357,64 @@ impl APIClient {
         let deployment: ServiceDeployResponse = deserialize_body(&response, status)?;
         Ok(deployment)
     }
+
+    pub fn list_env_vars(&self, service_slug: &str) -> APIResult<Vec<EnvVariable>> {
+        let (response, status) = self.get(&format!(
+            "/api/service/{}/environment-variables/",
+            service_slug
+        ))?;
+        let env_vars: Vec<EnvVariable> = deserialize_body(&response, status)?;
+        Ok(env_vars)
+    }
+
+    pub fn create_env_var(
+        &self,
+        service_slug: &str,
+        env_var: &EnvironmentVariableRequest,
+    ) -> APIResult<EnvVariable> {
+        let (response, status) = self.post(
+            &format!("/api/service/{}/environment-variables/", service_slug),
+            Some(env_var),
+        )?;
+
+        let env_var: EnvVariable = deserialize_body(&response, status)?;
+        Ok(env_var)
+    }
+
+    pub fn update_env_var(
+        &self,
+        service_slug: &str,
+        key_slug: &str,
+        payload: &EnvironmentVariableRequest,
+    ) -> APIResult<EnvVariable> {
+        let (response, status) = self.patch(
+            &format!(
+                "/api/service/{}/environment-variables/{}",
+                service_slug, key_slug
+            ),
+            payload,
+        )?;
+        let env_var: EnvVariable = deserialize_body(&response, status)?;
+        Ok(env_var)
+    }
+
+    pub fn delete_env_var(&self, service_slug: &str, key_slug: &str) -> APIResult<()> {
+        let (response, status) = self.delete(&format!(
+            "/api/service/{}/environment-variables/{}",
+            service_slug, key_slug
+        ))?;
+        if status.is_success() {
+            Ok(())
+        } else {
+            match serde_json::from_str::<APIError>(&response) {
+                Ok(api_err) => {
+                    error!("{}", api_err.detail);
+                    return Err(APIClientError::HTTPRequestError(api_err.detail));
+                }
+                Err(err) => Err(APIClientError::DeSerializerError(err.to_string())),
+            }
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -449,4 +528,10 @@ pub struct ServiceDeployRequest {
 pub struct ServiceDeployResponse {
     pub deployment: String,
     pub log: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct EnvironmentVariableRequest {
+    pub key_name: String,
+    pub key_value: String,
 }
