@@ -1,3 +1,5 @@
+use text_io::read;
+
 use super::types::{ServiceError, ServiceResult};
 use crate::client::{APIClient, ServiceListFilter};
 use crate::environments::get_env;
@@ -24,4 +26,11 @@ pub fn get_services(
     } else {
         Ok(services)
     }
+}
+
+pub fn get_service_name(maybe_service_name: Option<String>) -> String {
+    maybe_service_name.unwrap_or_else(|| {
+        println!("Service name: ");
+        read!()
+    })
 }

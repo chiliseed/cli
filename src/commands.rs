@@ -42,6 +42,23 @@ pub enum Command {
         #[structopt(subcommand)]
         cmd: ServiceSubCommands,
     },
+
+    #[structopt(
+        name = "env_vars",
+        about = "Management commands for service environment variables"
+    )]
+    EnvVar {
+        /// Name of the environment hosting the project
+        #[structopt(short, long = "environment")]
+        environment_name: Option<String>,
+        /// Name of the project to which the service(s) is(are) related
+        #[structopt(short, long = "project")]
+        project_name: Option<String>,
+        #[structopt(short, long = "service")]
+        service_name: Option<String>,
+        #[structopt(subcommand)]
+        cmd: EnvVarSubCommands,
+    },
 }
 
 #[derive(Debug, StructOpt)]
@@ -78,16 +95,13 @@ pub enum ServiceSubCommands {
     },
 }
 
-// #[derive(Debug, StructOpt)]
-// pub enum ServiceSubCommand {
-//     #[structopt(name = "add", about = "Add new service in cluster")]
-//     Add {
-//         /// The name of the service to add
-//         service_name: String,
-//         /// The name of the cluster in which to launch the service
-//         cluster_name: String,
-//         /// Port on which this service will listen to traffic
-//         #[structopt(short, long)]
-//         port: Option<i64>,
-//     },
-// }
+#[derive(Debug, StructOpt)]
+pub enum EnvVarSubCommands {
+    /// Create new environment variable for a service in provided project
+    Create {
+        /// Environment variable name. Example: API_KEY
+        key_name: String,
+        /// Environment variable value. Example: some-api-key
+        key_value: String,
+    },
+}

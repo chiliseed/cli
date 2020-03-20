@@ -84,6 +84,23 @@ where
     })
 }
 
+fn handle_empty_response_or_error(
+    response: &String,
+    status: StatusCode,
+) -> Result<(), APIClientError> {
+    if status.is_success() {
+        Ok(())
+    } else {
+        match serde_json::from_str::<APIError>(&response) {
+            Ok(api_err) => {
+                error!("{}", api_err.detail);
+                return Err(APIClientError::HTTPRequestError(api_err.detail));
+            }
+            Err(err) => Err(APIClientError::DeSerializerError(err.to_string())),
+        }
+    }
+}
+
 impl APIClient {
     pub fn new() -> APIResult<APIClient> {
         let username = match env::var("CHILISEED_USERNAME") {
@@ -173,12 +190,23 @@ impl APIClient {
         Ok((body.to_owned(), status))
     }
 
-    fn delete(&self, endpoint: &str) -> APIResult<(ResponseBody, StatusCode)> {
+    fn delete<T: Serialize>(
+        &self,
+        endpoint: &str,
+        payload: Option<&T>,
+    ) -> APIResult<(ResponseBody, StatusCode)> {
         let url = get_url(&self.api_host, endpoint)?;
-        let resp = self.client.delete(&url).send()?;
-        let status = resp.status();
-        let body = resp.text().unwrap();
-        Ok((body.to_owned(), status))
+        if let Some(data) = payload {
+            let resp = self.client.delete(&url).json(data).send()?;
+            let status = resp.status();
+            let body = resp.text().unwrap();
+            Ok((body.to_owned(), status))
+        } else {
+            let resp = self.client.delete(&url).send()?;
+            let status = resp.status();
+            let body = resp.text().unwrap();
+            Ok((body.to_owned(), status))
+        }
     }
 
     fn get_with_query_params<T: Serialize>(
@@ -214,18 +242,18 @@ impl APIClient {
         }
     }
 
-    fn patch<T: Serialize>(
-        &self,
-        endpoint: &str,
-        payload: &T,
-    ) -> APIResult<(ResponseBody, StatusCode)> {
-        let url = get_url(&self.api_host, endpoint)?;
-        let req = self.client.patch(&url).json(payload).send()?;
-        let status = req.status();
-        let body = req.text().unwrap();
-        debug!("server response {}", body);
-        Ok((body, status))
-    }
+    // fn patch<T: Serialize>(
+    //     &self,
+    //     endpoint: &str,
+    //     payload: &T,
+    // ) -> APIResult<(ResponseBody, StatusCode)> {
+    //     let url = get_url(&self.api_host, endpoint)?;
+    //     let req = self.client.patch(&url).json(payload).send()?;
+    //     let status = req.status();
+    //     let body = req.text().unwrap();
+    //     debug!("server response {}", body);
+    //     Ok((body, status))
+    // }
 
     pub fn list_envs(&self, filters: Option<&EnvListFilters>) -> APIResult<Vec<Env>> {
         let endpoint = "/api/environments/";
@@ -370,50 +398,27 @@ impl APIClient {
     pub fn create_env_var(
         &self,
         service_slug: &str,
-        env_var: &EnvironmentVariableRequest,
-    ) -> APIResult<EnvVariable> {
+        env_var: &CreateEnvironmentVariableRequest,
+    ) -> APIResult<CreateEnvironmentVariableResponse> {
         let (response, status) = self.post(
             &format!("/api/service/{}/environment-variables/", service_slug),
             Some(env_var),
         )?;
 
-        let env_var: EnvVariable = deserialize_body(&response, status)?;
-        Ok(env_var)
+        let key: CreateEnvironmentVariableResponse = deserialize_body(&response, status)?;
+        Ok(key)
     }
 
-    pub fn update_env_var(
+    pub fn delete_env_var(
         &self,
         service_slug: &str,
-        key_slug: &str,
-        payload: &EnvironmentVariableRequest,
-    ) -> APIResult<EnvVariable> {
-        let (response, status) = self.patch(
-            &format!(
-                "/api/service/{}/environment-variables/{}",
-                service_slug, key_slug
-            ),
-            payload,
+        payload: &DeleteEnvironmentVariableRequest,
+    ) -> APIResult<()> {
+        let (response, status) = self.delete(
+            &format!("/api/service/{}/environment-variables/", service_slug),
+            Some(payload),
         )?;
-        let env_var: EnvVariable = deserialize_body(&response, status)?;
-        Ok(env_var)
-    }
-
-    pub fn delete_env_var(&self, service_slug: &str, key_slug: &str) -> APIResult<()> {
-        let (response, status) = self.delete(&format!(
-            "/api/service/{}/environment-variables/{}",
-            service_slug, key_slug
-        ))?;
-        if status.is_success() {
-            Ok(())
-        } else {
-            match serde_json::from_str::<APIError>(&response) {
-                Ok(api_err) => {
-                    error!("{}", api_err.detail);
-                    return Err(APIClientError::HTTPRequestError(api_err.detail));
-                }
-                Err(err) => Err(APIClientError::DeSerializerError(err.to_string())),
-            }
-        }
+        handle_empty_response_or_error(&response, status)
     }
 }
 
@@ -531,7 +536,17 @@ pub struct ServiceDeployResponse {
 }
 
 #[derive(Debug, Serialize)]
-pub struct EnvironmentVariableRequest {
+pub struct CreateEnvironmentVariableRequest {
     pub key_name: String,
     pub key_value: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateEnvironmentVariableResponse {
+    pub key_name: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct DeleteEnvironmentVariableRequest {
+    pub key_name: String,
 }

@@ -1,36 +1,10 @@
-use rusoto_core::{Region, RusotoError};
-use rusoto_ssm::{PutParameterError, PutParameterRequest, PutParameterResult, Ssm, SsmClient};
-// use tokio;
-
-use crate::client::APIClient;
+use crate::client::{APIClient, CreateEnvironmentVariableRequest};
 use crate::services::get_services;
-
-// #[tokio::main]
-// fn create_parameter(
-//     key_path: &str,
-//     key_value: &str,
-// ) -> Result<PutParameterResult, RusotoError<PutParameterError>> {
-//     let ssm_client = SsmClient::new(Region::default());
-//     ssm_client
-//         .put_parameter(PutParameterRequest {
-//             allowed_pattern: None,
-//             description: None,
-//             key_id: None,
-//             name: key_path.to_string(),
-//             overwrite: Some(true),
-//             policies: None,
-//             tags: None,
-//             tier: None,
-//             type_: "SecureString".to_string(),
-//             value: key_value.to_string(),
-//         })
-//         .await
-// }
 
 pub fn create(
     api_client: &APIClient,
-    project_name: &str,
     env_name: &str,
+    project_name: &str,
     service_name: &str,
     key_name: &str,
     key_value: &str,
@@ -48,4 +22,17 @@ pub fn create(
             return;
         }
     };
+
+    match api_client.create_env_var(
+        &service.slug,
+        &CreateEnvironmentVariableRequest {
+            key_name: key_name.to_string(),
+            key_value: key_value.to_string(),
+        },
+    ) {
+        Ok(resp) => println!("Created new environment variable: {}", resp.key_name),
+        Err(err) => {
+            debug!("Error: {}", err.to_string());
+        }
+    }
 }

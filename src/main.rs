@@ -13,6 +13,7 @@ use std::process::exit;
 extern crate log;
 use structopt::StructOpt;
 
+use crate::commands::EnvVarSubCommands;
 use client::APIClient;
 use commands::{Command, EnvSubCommands, Opt, ProjectSubCommands, ServiceSubCommands};
 
@@ -88,6 +89,31 @@ fn main() {
                 let project_name = projects::get_project_name(project_name);
                 info!("Deploying service: {}", service_name);
                 services::deploy(&api_client, &env_name, &project_name, &service_name);
+            }
+        },
+
+        Command::EnvVar {
+            environment_name,
+            project_name,
+            service_name,
+            cmd,
+        } => match cmd {
+            EnvVarSubCommands::Create {
+                key_name,
+                key_value,
+            } => {
+                let env_name = projects::get_env_name(environment_name);
+                let project_name = projects::get_project_name(project_name);
+                let service_name = services::get_service_name(service_name);
+                info!("Creating new environment variable: {}", key_name);
+                env_vars::create(
+                    &api_client,
+                    &env_name,
+                    &project_name,
+                    &service_name,
+                    &key_name,
+                    &key_value,
+                );
             }
         },
     }

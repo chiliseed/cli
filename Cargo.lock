@@ -161,7 +161,6 @@ dependencies = [
  "rpassword 4.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "rusoto_core 0.43.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rusoto_credential 0.43.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "rusoto_ssm 0.43.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
  "ssh2 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1287,19 +1286,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rusoto_ssm"
-version = "0.43.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "async-trait 0.1.24 (registry+https://github.com/rust-lang/crates.io-index)",
- "bytes 0.5.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "rusoto_core 0.43.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "rust-argon2"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2166,7 +2152,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum rusoto_core 0.43.0 (registry+https://github.com/rust-lang/crates.io-index)" = "3a8d624cb48fcaca612329e4dd544380aa329ef338e83d3a90f5b7897e631971"
 "checksum rusoto_credential 0.43.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ba3e7cdf483d7198d9bca7414746d3ba656239e89e467b715d0571912f0b492f"
 "checksum rusoto_signature 0.43.0 (registry+https://github.com/rust-lang/crates.io-index)" = "62940a2bd479900a1bf8935b8f254d3e19368ac3ac4570eb4bd48eb46551a1b7"
-"checksum rusoto_ssm 0.43.0 (registry+https://github.com/rust-lang/crates.io-index)" = "309899e074b05cb8b80c1c82b71920ccb4f4506d383306e307c78d41ed942a39"
 "checksum rust-argon2 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "2bc8af4bda8e1ff4932523b94d3dd20ee30a87232323eda55903ffd71d2fb017"
 "checksum rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "138e3e0acb6c9fb258b19b67cb8abd63c00679d2851805ea151465464fe9030a"
 "checksum rustversion 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "b3bba175698996010c4f6dce5e7f173b6eb781fce25d2cfc45e27091ce0b79f6"
