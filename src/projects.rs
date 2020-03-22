@@ -3,7 +3,7 @@ use std::fmt;
 
 use text_io::read;
 
-use crate::client::{APIClient, EnvListFilters, ProjectListFilters, ProjectRequest};
+use crate::client::{ApiClient, EnvListFilters, ProjectListFilters, ProjectRequest};
 use crate::schemas::{Env, Project};
 use crate::utils::await_exec_result;
 
@@ -37,7 +37,7 @@ pub fn get_project_name(maybe_project_name: Option<String>) -> String {
     })
 }
 
-pub fn get_env_and_then<F>(api_client: &APIClient, env_name: &str, callback: F)
+pub fn get_env_and_then<F>(api_client: &ApiClient, env_name: &str, callback: F)
 where
     F: Fn(&Env),
 {
@@ -56,7 +56,7 @@ where
     }
 }
 
-pub fn list_projects(api_client: &APIClient, env_name: &str) {
+pub fn list_projects(api_client: &ApiClient, env_name: &str) {
     get_env_and_then(api_client, env_name, |env| {
         debug!("Getting projects for environment: \n{:?}", env);
         match api_client.list_projects(&env.slug, None) {
@@ -76,7 +76,7 @@ pub fn list_projects(api_client: &APIClient, env_name: &str) {
     })
 }
 
-pub fn create_project(api_client: &APIClient, env_name: &str, project_name: Option<String>) {
+pub fn create_project(api_client: &ApiClient, env_name: &str, project_name: Option<String>) {
     let p_name = get_project_name(project_name);
 
     get_env_and_then(api_client, &env_name, move |env| {
@@ -111,7 +111,7 @@ pub fn create_project(api_client: &APIClient, env_name: &str, project_name: Opti
 }
 
 pub fn get_project(
-    api_client: &APIClient,
+    api_client: &ApiClient,
     env_slug: &str,
     project_name: &str,
 ) -> ProjectResult<Project> {

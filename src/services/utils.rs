@@ -1,13 +1,13 @@
 use text_io::read;
 
 use super::types::{ServiceError, ServiceResult};
-use crate::client::{APIClient, ServiceListFilter};
+use crate::client::{ApiClient, ServiceListFilter};
 use crate::environments::get_env;
 use crate::projects::get_project;
 use crate::schemas::Service;
 
 pub fn get_services(
-    api_client: &APIClient,
+    api_client: &ApiClient,
     env_name: &str,
     project_name: &str,
     service_name: Option<String>,

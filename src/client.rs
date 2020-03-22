@@ -13,57 +13,53 @@ use crate::schemas::{Env, ExecLog, Project, Service, Worker};
 const API_HOST: &str = "http://localhost:8000";
 
 #[derive(Debug)]
-pub enum APIClientError {
+pub enum ApiClientError {
     HTTPRequestError(String),
-    HTTPTimeoutError(String),
+    HTTPTimeoutError(reqwest::Error),
     DeSerializerError(String),
     URLParseError(ParseError),
 }
 
-impl Error for APIClientError {
-    fn description(&self) -> &str {
+impl Error for ApiClientError {}
+
+impl From<ParseError> for ApiClientError {
+    fn from(err: ParseError) -> ApiClientError {
+        ApiClientError::URLParseError(err)
+    }
+}
+
+impl From<reqwest::Error> for ApiClientError {
+    fn from(err: reqwest::Error) -> ApiClientError {
+        ApiClientError::HTTPTimeoutError(err)
+    }
+}
+
+impl fmt::Display for ApiClientError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            APIClientError::HTTPRequestError(ref cause) => cause,
-            APIClientError::HTTPTimeoutError(ref cause) => cause,
-            APIClientError::DeSerializerError(ref cause) => cause,
-            APIClientError::URLParseError(ref err) => Error::description(err),
+            ApiClientError::HTTPRequestError(ref cause) => write!(f, "{}", cause),
+            ApiClientError::HTTPTimeoutError(ref err) => err.fmt(f),
+            ApiClientError::DeSerializerError(ref cause) => write!(f, "{}", cause),
+            ApiClientError::URLParseError(ref err) => err.fmt(f),
         }
     }
 }
 
-impl From<ParseError> for APIClientError {
-    fn from(err: ParseError) -> APIClientError {
-        APIClientError::URLParseError(err)
-    }
-}
-
-impl From<reqwest::Error> for APIClientError {
-    fn from(err: reqwest::Error) -> APIClientError {
-        APIClientError::HTTPTimeoutError(err.source().unwrap().to_string())
-    }
-}
-
-impl fmt::Display for APIClientError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.description())
-    }
-}
-
-pub type APIResult<T> = Result<T, APIClientError>;
+pub type ApiResult<T> = Result<T, ApiClientError>;
 type ResponseBody = String;
 
-pub struct APIClient {
+pub struct ApiClient {
     api_host: String,
     pub client: blocking::Client,
 }
 
-fn get_url(base_url: &str, endpoint: &str) -> APIResult<String> {
+fn get_url(base_url: &str, endpoint: &str) -> ApiResult<String> {
     let base = Url::parse(base_url)?;
     let url = base.join(endpoint)?;
     Ok(url.to_string())
 }
 
-fn deserialize_body<'de, T>(body: &'de str, status: StatusCode) -> Result<T, APIClientError>
+fn deserialize_body<'de, T>(body: &'de str, status: StatusCode) -> Result<T, ApiClientError>
 where
     T: Deserialize<'de>,
 {
@@ -73,13 +69,13 @@ where
             match api_err {
                 Ok(api_err) => {
                     error!("{}", api_err.detail);
-                    APIClientError::HTTPRequestError(api_err.detail)
+                    ApiClientError::HTTPRequestError(api_err.detail)
                 }
-                Err(err) => APIClientError::DeSerializerError(err.to_string()),
+                Err(err) => ApiClientError::DeSerializerError(err.to_string()),
             }
         } else {
             error!("{}", err.to_string());
-            APIClientError::DeSerializerError(err.to_string())
+            ApiClientError::DeSerializerError(err.to_string())
         }
     })
 }
@@ -87,22 +83,22 @@ where
 fn handle_empty_response_or_error(
     response: &String,
     status: StatusCode,
-) -> Result<(), APIClientError> {
+) -> Result<(), ApiClientError> {
     if status.is_success() {
         Ok(())
     } else {
         match serde_json::from_str::<APIError>(&response) {
             Ok(api_err) => {
                 error!("{}", api_err.detail);
-                return Err(APIClientError::HTTPRequestError(api_err.detail));
+                return Err(ApiClientError::HTTPRequestError(api_err.detail));
             }
-            Err(err) => Err(APIClientError::DeSerializerError(err.to_string())),
+            Err(err) => Err(ApiClientError::DeSerializerError(err.to_string())),
         }
     }
 }
 
-impl APIClient {
-    pub fn new() -> APIResult<APIClient> {
+impl ApiClient {
+    pub fn new() -> ApiResult<ApiClient> {
         let username = match env::var("CHILISEED_USERNAME") {
             Ok(val) => val,
             Err(_err) => {
@@ -156,13 +152,13 @@ impl APIClient {
         let resp: LoginResponse = serde_json::from_str(&resp_body).map_err(|_err| {
             let err: LoginResponseError = serde_json::from_str(&resp_body)
                 .map_err(|_err| {
-                    return APIClientError::DeSerializerError(
+                    return ApiClientError::DeSerializerError(
                         "Failed to understand server response".to_owned(),
                     );
                 })
                 .unwrap();
             debug!("{:?}", err.non_field_errors);
-            return APIClientError::HTTPRequestError(
+            return ApiClientError::HTTPRequestError(
                 "Failed to login with provided credentials.".to_owned(),
             );
         })?;
@@ -177,13 +173,13 @@ impl APIClient {
             .build()
             .unwrap();
 
-        Ok(APIClient {
+        Ok(ApiClient {
             api_host: api_host.to_string(),
             client: api_client,
         })
     }
 
-    fn get(&self, endpoint: &str) -> APIResult<(ResponseBody, StatusCode)> {
+    fn get(&self, endpoint: &str) -> ApiResult<(ResponseBody, StatusCode)> {
         let url = get_url(&self.api_host, endpoint)?;
         let resp = self.client.get(&url).send()?;
         let status = resp.status();
@@ -195,7 +191,7 @@ impl APIClient {
         &self,
         endpoint: &str,
         payload: Option<&T>,
-    ) -> APIResult<(ResponseBody, StatusCode)> {
+    ) -> ApiResult<(ResponseBody, StatusCode)> {
         let url = get_url(&self.api_host, endpoint)?;
         if let Some(data) = payload {
             let resp = self.client.delete(&url).json(data).send()?;
@@ -214,7 +210,7 @@ impl APIClient {
         &self,
         endpoint: &str,
         query: &T,
-    ) -> APIResult<(ResponseBody, StatusCode)> {
+    ) -> ApiResult<(ResponseBody, StatusCode)> {
         let url = get_url(&self.api_host, endpoint)?;
         let resp = self.client.get(&url).query(&query).send()?;
         let status = resp.status();
@@ -226,7 +222,7 @@ impl APIClient {
         &self,
         endpoint: &str,
         payload: Option<&T>,
-    ) -> APIResult<(ResponseBody, StatusCode)> {
+    ) -> ApiResult<(ResponseBody, StatusCode)> {
         let url = get_url(&self.api_host, endpoint)?;
         if let Some(data) = payload {
             let req = self.client.post(&url).json(data).send()?;
@@ -256,7 +252,7 @@ impl APIClient {
     //     Ok((body, status))
     // }
 
-    pub fn list_envs(&self, filters: Option<&EnvListFilters>) -> APIResult<Vec<Env>> {
+    pub fn list_envs(&self, filters: Option<&EnvListFilters>) -> ApiResult<Vec<Env>> {
         let endpoint = "/api/environments/";
         let (response_body, status_code) = match filters {
             Some(f) => self.get_with_query_params(endpoint, f)?,
@@ -267,32 +263,32 @@ impl APIClient {
         Ok(envs)
     }
 
-    pub fn create_env(&self, env: &CreateEnvRequest) -> APIResult<CreateEnvResponse> {
+    pub fn create_env(&self, env: &CreateEnvRequest) -> ApiResult<CreateEnvResponse> {
         let (response_body, status_code) = self.post("/api/environments/create", Some(env))?;
 
         let env: CreateEnvResponse =
             deserialize_body(&response_body, status_code).map_err(|err| {
                 if status_code.is_client_error() {
                     let api_err: CreateEnvResponseError = serde_json::from_str(&response_body)
-                        .map_err(|err| APIClientError::DeSerializerError(err.to_string()))
+                        .map_err(|err| ApiClientError::DeSerializerError(err.to_string()))
                         .unwrap();
                     if let Some(name_err) = api_err.name {
-                        return APIClientError::HTTPRequestError(name_err[0].to_owned());
+                        return ApiClientError::HTTPRequestError(name_err[0].to_owned());
                     }
                     if let Some(domain_err) = api_err.domain {
-                        return APIClientError::HTTPRequestError(domain_err[0].to_owned());
+                        return ApiClientError::HTTPRequestError(domain_err[0].to_owned());
                     }
                     if let Some(region_err) = api_err.region {
-                        return APIClientError::HTTPRequestError(region_err[0].to_owned());
+                        return ApiClientError::HTTPRequestError(region_err[0].to_owned());
                     }
                 }
                 error!("{}", err.to_string());
-                APIClientError::DeSerializerError("Failed to parse error response".to_string())
+                ApiClientError::DeSerializerError("Failed to parse error response".to_string())
             })?;
         Ok(env)
     }
 
-    pub fn get_exec_log(&self, slug: &str) -> APIResult<ExecLog> {
+    pub fn get_exec_log(&self, slug: &str) -> ApiResult<ExecLog> {
         let (response_body, _) = self.get(&format!("/api/execution/status/{}", slug))?;
         let log: ExecLog = serde_json::from_str(&response_body).unwrap();
         Ok(log)
@@ -302,7 +298,7 @@ impl APIClient {
         &self,
         env_slug: &str,
         filter: Option<&ProjectListFilters>,
-    ) -> APIResult<Vec<Project>> {
+    ) -> ApiResult<Vec<Project>> {
         let url = format!("/api/environment/{}/projects", env_slug);
         let (response_body, status) = match filter {
             Some(query) => self.get_with_query_params(&url, query)?,
@@ -317,7 +313,7 @@ impl APIClient {
         &self,
         project: &ProjectRequest,
         env_slug: &str,
-    ) -> APIResult<CreateProjectResponse> {
+    ) -> ApiResult<CreateProjectResponse> {
         let (response_body, status) = self.post(
             &format!("/api/environment/{}/projects/", env_slug),
             Some(project),
@@ -331,7 +327,7 @@ impl APIClient {
         &self,
         project_slug: &str,
         filters: Option<&ServiceListFilter>,
-    ) -> APIResult<Vec<Service>> {
+    ) -> ApiResult<Vec<Service>> {
         let endpoint = format!("/api/project/{}/services/", project_slug);
         let (response_body, status) = match filters {
             Some(query) => self.get_with_query_params(&endpoint, query)?,
@@ -346,7 +342,7 @@ impl APIClient {
         &self,
         service: &CreateServiceRequest,
         project_slug: &str,
-    ) -> APIResult<CreateServiceResponse> {
+    ) -> ApiResult<CreateServiceResponse> {
         let (response, status) = self.post(
             &format!("/api/project/{}/services/", project_slug),
             Some(service),
@@ -359,7 +355,7 @@ impl APIClient {
         &self,
         worker: &LaunchWorkerRequest,
         service_slug: &str,
-    ) -> APIResult<LaunchWorkerResponse> {
+    ) -> ApiResult<LaunchWorkerResponse> {
         let (response, status) = self.post(
             &format!("/api/service/{}/build", service_slug),
             Some(worker),
@@ -368,7 +364,7 @@ impl APIClient {
         Ok(worker)
     }
 
-    pub fn get_worker_details(&self, worker_slug: &str) -> APIResult<Worker> {
+    pub fn get_worker_details(&self, worker_slug: &str) -> ApiResult<Worker> {
         let (response, status) = self.get(&format!("/api/worker/{}", worker_slug))?;
         let worker: Worker = deserialize_body(&response, status)?;
         Ok(worker)
@@ -378,7 +374,7 @@ impl APIClient {
         &self,
         service_slug: &str,
         payload: &ServiceDeployRequest,
-    ) -> APIResult<ServiceDeployResponse> {
+    ) -> ApiResult<ServiceDeployResponse> {
         let (response, status) = self.post(
             &format!("/api/service/{}/deploy", service_slug),
             Some(payload),
@@ -390,7 +386,7 @@ impl APIClient {
     pub fn list_env_vars(
         &self,
         service_slug: &str,
-    ) -> APIResult<Vec<ListEnvironmentVariableResponse>> {
+    ) -> ApiResult<Vec<ListEnvironmentVariableResponse>> {
         let (response, status) = self.get(&format!(
             "/api/service/{}/environment-variables/",
             service_slug
@@ -403,7 +399,7 @@ impl APIClient {
         &self,
         service_slug: &str,
         env_var: &CreateEnvironmentVariableRequest,
-    ) -> APIResult<CreateEnvironmentVariableResponse> {
+    ) -> ApiResult<CreateEnvironmentVariableResponse> {
         let (response, status) = self.post(
             &format!("/api/service/{}/environment-variables/", service_slug),
             Some(env_var),
@@ -417,7 +413,7 @@ impl APIClient {
         &self,
         service_slug: &str,
         payload: &DeleteEnvironmentVariableRequest,
-    ) -> APIResult<()> {
+    ) -> ApiResult<()> {
         let (response, status) = self.delete(
             &format!("/api/service/{}/environment-variables/", service_slug),
             Some(payload),

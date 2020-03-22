@@ -2,11 +2,11 @@ use std::process::Command;
 use std::thread::sleep;
 use std::time::Duration;
 
-use crate::client::APIClient;
+use crate::client::ApiClient;
 
 const WAIT_TIME_SECS: u64 = 10;
 
-pub fn await_exec_result(api_client: &APIClient, run_slug: &str) -> bool {
+pub fn await_exec_result(api_client: &ApiClient, run_slug: &str) -> bool {
     let timeout_minutes = 30;
     let mut waited = 0;
     loop {

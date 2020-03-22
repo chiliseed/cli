@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::{fmt, io};
 
-use crate::client::APIClientError;
+use crate::client::ApiClientError;
 use crate::environments::EnvError;
 use crate::projects::ProjectError;
 
@@ -10,7 +10,7 @@ pub enum ServiceError {
     EnvError(EnvError),
     ProjectError(ProjectError),
     ServicesNotFound(String),
-    APIError(APIClientError),
+    APIError(ApiClientError),
     DeploymentError(String),
 }
 
@@ -30,8 +30,8 @@ impl From<EnvError> for ServiceError {
     }
 }
 
-impl From<APIClientError> for ServiceError {
-    fn from(err: APIClientError) -> ServiceError {
+impl From<ApiClientError> for ServiceError {
+    fn from(err: ApiClientError) -> ServiceError {
         ServiceError::APIError(err)
     }
 }

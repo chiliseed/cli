@@ -8,7 +8,7 @@ use rusoto_credential::{
 use text_io::read;
 use tokio;
 
-use crate::client::{APIClient, CreateEnvRequest, EnvListFilters};
+use crate::client::{ApiClient, CreateEnvRequest, EnvListFilters};
 use crate::schemas::Env;
 use crate::utils::await_exec_result;
 
@@ -33,7 +33,7 @@ async fn get_aws_credentials() -> Result<AwsCredentials, CredentialsError> {
     EnvironmentProvider::default().credentials().await
 }
 
-pub fn add(api_client: &APIClient, name: Option<String>, domain: Option<String>) {
+pub fn add(api_client: &ApiClient, name: Option<String>, domain: Option<String>) {
     let env_name = name.unwrap_or_else(|| {
         println!("Environment name: ");
         read!()
@@ -70,7 +70,7 @@ pub fn add(api_client: &APIClient, name: Option<String>, domain: Option<String>)
     }
 }
 
-pub fn list_envs(api_client: &APIClient) {
+pub fn list_envs(api_client: &ApiClient) {
     match api_client.list_envs(None) {
         Ok(envs) => {
             if envs.is_empty() {
@@ -87,7 +87,7 @@ pub fn list_envs(api_client: &APIClient) {
     }
 }
 
-pub fn get_env(api_client: &APIClient, env_name: &str) -> EnvResult<Env> {
+pub fn get_env(api_client: &ApiClient, env_name: &str) -> EnvResult<Env> {
     match api_client.list_envs(Some(&EnvListFilters {
         name: Some(env_name.to_string()),
     })) {

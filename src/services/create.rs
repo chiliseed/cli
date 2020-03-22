@@ -1,11 +1,11 @@
 use text_io::read;
 
-use crate::client::{APIClient, CreateServiceRequest};
+use crate::client::{ApiClient, CreateServiceRequest};
 use crate::environments::get_env;
 use crate::projects::get_project;
 use crate::utils::await_exec_result;
 
-pub fn create_service(api_client: &APIClient, env_name: &str, project_name: &str) {
+pub fn create_service(api_client: &ApiClient, env_name: &str, project_name: &str) {
     let env = match get_env(api_client, env_name) {
         Ok(e) => e,
         Err(err) => {

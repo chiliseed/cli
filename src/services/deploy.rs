@@ -13,7 +13,7 @@ use walkdir::WalkDir;
 
 use super::types::ServiceResult;
 use super::utils::get_services;
-use crate::client::{APIClient, LaunchWorkerRequest, ServiceDeployRequest};
+use crate::client::{ApiClient, LaunchWorkerRequest, ServiceDeployRequest};
 use crate::utils::{await_exec_result, exec_command_with_output};
 
 const BUILD_WORKER_USER: &str = "ubuntu";
@@ -22,7 +22,7 @@ const BUILD_LOCATION: &str = "_build";
 /// This command must be run from the same location as the dockerfile of the service to be deployed.
 /// First, builds an image and pushes it to ECR.
 /// Second, triggers deploy of the service on the server.
-pub fn deploy(api_client: &APIClient, env_name: &str, project_name: &str, service_name: &str) {
+pub fn deploy(api_client: &ApiClient, env_name: &str, project_name: &str, service_name: &str) {
     let service = match get_services(
         api_client,
         env_name,

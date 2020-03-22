@@ -1,8 +1,8 @@
 use super::types::ServiceError;
 use super::utils::get_services;
-use crate::client::APIClient;
+use crate::client::ApiClient;
 
-pub fn list_services(api_client: &APIClient, env_name: &str, project_name: &str) {
+pub fn list_services(api_client: &ApiClient, env_name: &str, project_name: &str) {
     match get_services(api_client, env_name, project_name, None) {
         Ok(services) => {
             if services.is_empty() {

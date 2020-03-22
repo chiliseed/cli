@@ -14,7 +14,7 @@ extern crate log;
 use structopt::StructOpt;
 
 use crate::commands::EnvVarSubCommands;
-use client::APIClient;
+use client::ApiClient;
 use commands::{Command, EnvSubCommands, Opt, ProjectSubCommands, ServiceSubCommands};
 
 fn main() {
@@ -24,7 +24,7 @@ fn main() {
     info!("Firing up chiliseed CLI");
     let args = Opt::from_args();
 
-    let api_client = match APIClient::new() {
+    let api_client = match ApiClient::new() {
         Ok(c) => c,
         Err(err) => {
             error!("{}", err);

@@ -1,8 +1,8 @@
-use crate::client::{APIClient, CreateEnvironmentVariableRequest};
+use crate::client::{ApiClient, CreateEnvironmentVariableRequest};
 use crate::services::get_services;
 
 pub fn create(
-    api_client: &APIClient,
+    api_client: &ApiClient,
     env_name: &str,
     project_name: &str,
     service_name: &str,
@@ -37,7 +37,7 @@ pub fn create(
     }
 }
 
-pub fn list(api_client: &APIClient, env_name: &str, project_name: &str, service_name: &str) {
+pub fn list(api_client: &ApiClient, env_name: &str, project_name: &str, service_name: &str) {
     let service = match get_services(
         api_client,
         env_name,
