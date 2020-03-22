@@ -97,11 +97,14 @@ pub enum ServiceSubCommands {
 
 #[derive(Debug, StructOpt)]
 pub enum EnvVarSubCommands {
-    /// Create new environment variable for a service in provided project
+    /// Create new environment variable for a service
     Create {
         /// Environment variable name. Example: API_KEY
         key_name: String,
         /// Environment variable value. Example: some-api-key
         key_value: String,
     },
+
+    /// List environment variables for the service
+    List {},
 }

@@ -115,6 +115,14 @@ fn main() {
                     &key_value,
                 );
             }
+
+            EnvVarSubCommands::List {} => {
+                let env_name = projects::get_env_name(environment_name);
+                let project_name = projects::get_project_name(project_name);
+                let service_name = services::get_service_name(service_name);
+                info!("Listing environment variables for service: {} in project: {} in environment: {}", service_name, project_name, env_name);
+                env_vars::list(&api_client, &env_name, &project_name, &service_name);
+            }
         },
     }
 }

@@ -36,3 +36,46 @@ pub fn create(
         }
     }
 }
+
+pub fn list(api_client: &APIClient, env_name: &str, project_name: &str, service_name: &str) {
+    let service = match get_services(
+        api_client,
+        env_name,
+        project_name,
+        Some(service_name.to_string()),
+    ) {
+        Ok(services) => services[0].clone(),
+        Err(err) => {
+            debug!("Error: {}", err.to_string());
+            eprintln!("Service not found. Please check service name and try again.");
+            return;
+        }
+    };
+
+    match api_client.list_env_vars(&service.slug) {
+        Ok(env_vars) => {
+            if env_vars.is_empty() {
+                println!("Service {} has no environment variables.", service_name);
+                return;
+            }
+
+            for env_var in env_vars {
+                println!("{}", std::iter::repeat("=").take(60).collect::<String>());
+                println!(
+                    "Name {} {}",
+                    std::iter::repeat(" ").take(5).collect::<String>(),
+                    env_var.name
+                );
+                println!(
+                    "Key path {} {}",
+                    std::iter::repeat(" ").take(1).collect::<String>(),
+                    env_var.value_from
+                );
+            }
+        }
+
+        Err(err) => {
+            eprintln!("Error: {}", err.to_string());
+        }
+    }
+}

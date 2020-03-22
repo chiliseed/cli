@@ -57,11 +57,3 @@ pub struct Worker {
     pub ssh_key_name: String,
     pub public_ip: String,
 }
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct EnvVariable {
-    pub slug: String,
-    pub key_name: String,
-    pub key_value: String,
-    pub is_secret: bool,
-}

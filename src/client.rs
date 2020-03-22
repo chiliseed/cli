@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use text_io::read;
 use url::{ParseError, Url};
 
-use crate::schemas::{Env, EnvVariable, ExecLog, Project, Service, Worker};
+use crate::schemas::{Env, ExecLog, Project, Service, Worker};
 
 const API_HOST: &str = "http://localhost:8000";
 
@@ -21,14 +21,14 @@ pub enum APIClientError {
 }
 
 impl Error for APIClientError {
-    // fn description(&self) -> &str {
-    //     match *self {
-    //         APIClientError::HTTPRequestError(ref cause) => cause,
-    //         APIClientError::HTTPTimeoutError(ref cause) => cause,
-    //         APIClientError::DeSerializerError(ref cause) => cause,
-    //         APIClientError::URLParseError(ref err) => Error::description(err),
-    //     }
-    // }
+    fn description(&self) -> &str {
+        match *self {
+            APIClientError::HTTPRequestError(ref cause) => cause,
+            APIClientError::HTTPTimeoutError(ref cause) => cause,
+            APIClientError::DeSerializerError(ref cause) => cause,
+            APIClientError::URLParseError(ref err) => Error::description(err),
+        }
+    }
 }
 
 impl From<ParseError> for APIClientError {
@@ -39,13 +39,13 @@ impl From<ParseError> for APIClientError {
 
 impl From<reqwest::Error> for APIClientError {
     fn from(err: reqwest::Error) -> APIClientError {
-        APIClientError::HTTPTimeoutError(err.to_string())
+        APIClientError::HTTPTimeoutError(err.source().unwrap().to_string())
     }
 }
 
 impl fmt::Display for APIClientError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.to_string())
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.description())
     }
 }
 
@@ -135,10 +135,11 @@ impl APIClient {
 
         let api_client = blocking::ClientBuilder::new()
             .default_headers(headers.clone())
-            .build()
-            .unwrap();
+            .build()?;
 
         let login_url = get_url(&api_host, "/api/auth/login")?;
+
+        debug!("Authenticating user");
 
         let resp = api_client
             .post(login_url.as_str())
@@ -386,12 +387,15 @@ impl APIClient {
         Ok(deployment)
     }
 
-    pub fn list_env_vars(&self, service_slug: &str) -> APIResult<Vec<EnvVariable>> {
+    pub fn list_env_vars(
+        &self,
+        service_slug: &str,
+    ) -> APIResult<Vec<ListEnvironmentVariableResponse>> {
         let (response, status) = self.get(&format!(
             "/api/service/{}/environment-variables/",
             service_slug
         ))?;
-        let env_vars: Vec<EnvVariable> = deserialize_body(&response, status)?;
+        let env_vars: Vec<ListEnvironmentVariableResponse> = deserialize_body(&response, status)?;
         Ok(env_vars)
     }
 
@@ -544,6 +548,13 @@ pub struct CreateEnvironmentVariableRequest {
 #[derive(Debug, Deserialize)]
 pub struct CreateEnvironmentVariableResponse {
     pub key_name: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ListEnvironmentVariableResponse {
+    pub name: String,
+    pub value_from: String,
+    pub last_modified: String,
 }
 
 #[derive(Debug, Serialize)]
