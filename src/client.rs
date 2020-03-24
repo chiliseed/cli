@@ -489,6 +489,8 @@ pub struct ProjectListFilters {
 #[derive(Debug, Serialize)]
 pub struct CreateServiceRequest {
     pub name: String,
+    pub has_web_interface: bool,
+    pub default_dockerfile_path: String,
     pub subdomain: String,
     pub container_port: String,
     pub alb_port_http: String,

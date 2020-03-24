@@ -24,23 +24,50 @@ pub fn create_service(api_client: &ApiClient, env_name: &str, project_name: &str
     println!("Your service name (example: api): ");
     let name: String = read!();
 
-    println!("Your service subdomain (for example, for api.example.com, subdomain is `api`): ");
-    let subdomain: String = read!();
+    println!("Does your service need web interface? [y/n]: ");
+    let is_web: String = read!();
+    let mut has_web_interface = true;
+    if !vec!["y", "Y", "yes", "Yes", "YES"].contains(&is_web.as_str()) {
+        has_web_interface = false;
+    }
 
-    println!("On what port will your container listen (example: 8000): ");
-    let container_port: String = read!();
+    let mut subdomain = "".to_string();
+    let mut container_port = "".to_string();
+    let mut alb_port_http = "".to_string();
+    let mut alb_port_https = "".to_string();
+    let mut health_check_endpoint = "".to_string();
 
-    println!("On what port do you want the load balancer to listen for HTTP traffic for this service (example: 80): ");
-    let alb_port_http: String = read!();
+    if has_web_interface {
+        println!("Your service subdomain (for example, for api.example.com, subdomain is `api`): ");
+        subdomain = read!();
 
-    println!("On what port do you want the load balancer to listen for HTTPS traffic for this service (example: 443): ");
-    let alb_port_https: String = read!();
+        println!("On what port will your container listen (example: 8000): ");
+        container_port = read!();
 
-    println!("What is your health check endpoint (example: /api/health/check/): ");
-    let health_check_endpoint: String = read!();
+        println!("On what port do you want the load balancer to listen for HTTP traffic for this service (example: 80): ");
+        alb_port_http = read!();
+
+        println!("On what port do you want the load balancer to listen for HTTPS traffic for this service (example: 443): ");
+        alb_port_https = read!();
+
+        println!("What is your health check endpoint (example: /api/health/check/): ");
+        health_check_endpoint = read!();
+    }
+
+    let mut default_dockerfile_path = "./Dockerfile".to_string();
+    println!(
+        "Path to service's dockerfile, relative to project root [defaults to '{}']: ",
+        default_dockerfile_path
+    );
+    let dockerfile: String = read!();
+    if !dockerfile.is_empty() {
+        default_dockerfile_path = dockerfile;
+    }
 
     let service = CreateServiceRequest {
         name,
+        has_web_interface,
+        default_dockerfile_path,
         subdomain,
         container_port,
         alb_port_http,
