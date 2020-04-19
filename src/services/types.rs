@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::{fmt, io};
 
-use crate::client::ApiClientError;
+use crate::api_client::ApiClientError;
 use crate::environments::EnvError;
 use crate::projects::ProjectError;
 

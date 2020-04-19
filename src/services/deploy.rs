@@ -13,7 +13,7 @@ use walkdir::WalkDir;
 
 use super::types::ServiceResult;
 use super::utils::get_services;
-use crate::client::{ApiClient, LaunchWorkerRequest, ServiceDeployRequest};
+use crate::api_client::{ApiClient, LaunchWorkerRequest, ServiceDeployRequest};
 use crate::utils::{await_exec_result, exec_command_with_output};
 
 const BUILD_WORKER_USER: &str = "ubuntu";

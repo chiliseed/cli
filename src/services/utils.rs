@@ -1,7 +1,7 @@
 use text_io::read;
 
 use super::types::{ServiceError, ServiceResult};
-use crate::client::{ApiClient, ServiceListFilter};
+use crate::api_client::{ApiClient, ServiceListFilter};
 use crate::environments::get_env;
 use crate::projects::get_project;
 use crate::schemas::Service;

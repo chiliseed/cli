@@ -2,7 +2,7 @@ use std::process::Command;
 use std::thread::sleep;
 use std::time::Duration;
 
-use crate::client::ApiClient;
+use crate::api_client::ApiClient;
 
 const WAIT_TIME_SECS: u64 = 10;
 

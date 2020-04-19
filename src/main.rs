@@ -1,5 +1,6 @@
-mod client;
+mod api_client;
 mod commands;
+mod db;
 mod env_vars;
 mod environments;
 mod projects;
@@ -14,7 +15,7 @@ extern crate log;
 use structopt::StructOpt;
 
 use crate::commands::EnvVarSubCommands;
-use client::ApiClient;
+use api_client::ApiClient;
 use commands::{Command, EnvSubCommands, Opt, ProjectSubCommands, ServiceSubCommands};
 
 fn main() {

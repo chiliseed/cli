@@ -1,6 +1,6 @@
 use text_io::read;
 
-use crate::client::{ApiClient, CreateServiceRequest};
+use crate::api_client::{ApiClient, CreateServiceRequest};
 use crate::environments::get_env;
 use crate::projects::get_project;
 use crate::utils::await_exec_result;

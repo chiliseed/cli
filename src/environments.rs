@@ -8,7 +8,7 @@ use rusoto_credential::{
 use text_io::read;
 use tokio;
 
-use crate::client::{ApiClient, CreateEnvRequest, EnvListFilters};
+use crate::api_client::{ApiClient, CreateEnvRequest, EnvListFilters};
 use crate::schemas::Env;
 use crate::utils::await_exec_result;
 

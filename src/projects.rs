@@ -3,7 +3,7 @@ use std::fmt;
 
 use text_io::read;
 
-use crate::client::{ApiClient, EnvListFilters, ProjectListFilters, ProjectRequest};
+use crate::api_client::{ApiClient, EnvListFilters, ProjectListFilters, ProjectRequest};
 use crate::schemas::{Env, Project};
 use crate::utils::await_exec_result;
 

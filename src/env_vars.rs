@@ -1,4 +1,4 @@
-use crate::client::{ApiClient, CreateEnvironmentVariableRequest};
+use crate::api_client::{ApiClient, CreateEnvironmentVariableRequest};
 use crate::services::get_services;
 
 pub fn create(

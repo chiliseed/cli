@@ -1,6 +1,6 @@
 use super::types::ServiceError;
 use super::utils::get_services;
-use crate::client::ApiClient;
+use crate::api_client::ApiClient;
 
 pub fn list_services(api_client: &ApiClient, env_name: &str, project_name: &str) {
     match get_services(api_client, env_name, project_name, None) {
