@@ -6,5 +6,5 @@ mod types;
 mod utils;
 
 pub use self::client::*;
+pub use self::endpoints::*;
 pub use self::errors::*;
-pub use self::schemas::*;

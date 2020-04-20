@@ -51,13 +51,29 @@ pub enum Command {
         /// Name of the environment hosting the project
         #[structopt(short, long = "environment")]
         environment_name: Option<String>,
-        /// Name of the project to which the service(s) is(are) related
+        /// Name of the project hosting the service
         #[structopt(short, long = "project")]
         project_name: Option<String>,
+        /// Name of the service for which to add the environment variable
         #[structopt(short, long = "service")]
         service_name: Option<String>,
         #[structopt(subcommand)]
         cmd: EnvVarSubCommands,
+    },
+
+    #[structopt(
+        name = "db",
+        about = "Management commands for databases in your environments"
+    )]
+    Db {
+        /// Name of the environment hosting database(s)
+        #[structopt(short, long = "environment")]
+        environment_name: Option<String>,
+        /// Name of the project for which to add the database
+        #[structopt(short, long = "project")]
+        project_name: Option<String>,
+        #[structopt(subcommand)]
+        cmd: DbSubCommands,
     },
 }
 
@@ -107,4 +123,10 @@ pub enum EnvVarSubCommands {
 
     /// List environment variables for the service
     List {},
+}
+
+#[derive(Debug, StructOpt)]
+pub enum DbSubCommands {
+    /// Create new database in environment
+    Create {},
 }

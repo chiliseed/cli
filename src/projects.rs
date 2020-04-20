@@ -9,15 +9,18 @@ use crate::utils::await_exec_result;
 
 #[derive(Debug)]
 pub enum ProjectError {
-    ProjectNotFound(String),
-    ErrorGettingProject(String),
+    NotFound(String),
+    ApiError(String),
 }
 
 impl Error for ProjectError {}
 
 impl fmt::Display for ProjectError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.to_string())
+        match *self {
+            ProjectError::NotFound(ref cause) => write!(f, "{}", cause),
+            ProjectError::ApiError(ref cause) => write!(f, "{}", cause),
+        }
     }
 }
 
@@ -123,7 +126,7 @@ pub fn get_project(
     ) {
         Ok(projects) => {
             if projects.is_empty() {
-                Err(ProjectError::ProjectNotFound(format!(
+                Err(ProjectError::NotFound(format!(
                     "Project {} was not found",
                     project_name
                 )))
@@ -131,8 +134,6 @@ pub fn get_project(
                 Ok(projects[0].clone())
             }
         }
-        Err(_) => Err(ProjectError::ErrorGettingProject(
-            "Error getting project".to_string(),
-        )),
+        Err(_) => Err(ProjectError::ApiError("Error getting project".to_string())),
     }
 }

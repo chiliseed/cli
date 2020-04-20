@@ -14,7 +14,7 @@ use std::process::exit;
 extern crate log;
 use structopt::StructOpt;
 
-use crate::commands::EnvVarSubCommands;
+use crate::commands::{DbSubCommands, EnvVarSubCommands};
 use api_client::ApiClient;
 use commands::{Command, EnvSubCommands, Opt, ProjectSubCommands, ServiceSubCommands};
 
@@ -123,6 +123,19 @@ fn main() {
                 let service_name = services::get_service_name(service_name);
                 info!("Listing environment variables for service: {} in project: {} in environment: {}", service_name, project_name, env_name);
                 env_vars::list(&api_client, &env_name, &project_name, &service_name);
+            }
+        },
+
+        Command::Db {
+            environment_name,
+            project_name,
+            cmd,
+        } => match cmd {
+            DbSubCommands::Create {} => {
+                let env_name = projects::get_env_name(environment_name);
+                let project_name = projects::get_project_name(project_name);
+                info!("Adding new database in {} environment", env_name);
+                db::create_db(&api_client, &env_name, &project_name);
             }
         },
     }

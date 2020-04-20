@@ -22,7 +22,10 @@ impl Error for EnvError {}
 
 impl fmt::Display for EnvError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.to_string())
+        match *self {
+            EnvError::EnvNotFound(ref cause) => write!(f, "{}", cause),
+            EnvError::ErrorGettingEnv(ref cause) => write!(f, "{}", cause),
+        }
     }
 }
 
