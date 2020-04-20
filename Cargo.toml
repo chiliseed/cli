@@ -12,6 +12,7 @@ flate2 = "1.0.13"
 globset = "0.3"
 log = "0.4.8"
 pretty_env_logger = "0.3.1"
+prettytable-rs = "0.8"
 reqwest = {version = "0.10.1", features = ["json", "blocking", "cookies"]}
 rpassword = "4.0"
 rusoto_core = "0.43.0"

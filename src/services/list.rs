@@ -1,3 +1,5 @@
+use prettytable::{format, Cell, Row, Table};
+
 use super::types::ServiceError;
 use super::utils::get_services;
 use crate::api_client::ApiClient;
@@ -18,49 +20,44 @@ pub fn list_services(api_client: &ApiClient, env_name: &str, project_name: &str)
                 let aws_url_parts: Vec<&str> = ecr_repo_url.split(".").collect();
                 let region = aws_url_parts[3];
                 let account_id = aws_url_parts[0];
+                let mut table = Table::new();
+                let format = format::FormatBuilder::new().column_separator('\t').build();
+                table.set_format(format);
+
                 println!();
                 println!("{}", service.name);
                 println!("{}", std::iter::repeat("=").take(60).collect::<String>());
-                println!(
-                    "Subomain {} {}",
-                    std::iter::repeat(" ").take(9).collect::<String>(),
-                    service.subdomain
-                );
-                println!(
-                    "Container Port {} {}",
-                    std::iter::repeat(" ").take(3).collect::<String>(),
-                    service.container_port
-                );
-                println!(
-                    "ALB HTTP Port {} {}",
-                    std::iter::repeat(" ").take(4).collect::<String>(),
-                    service.alb_port_http
-                );
-                println!(
-                    "ALB HTTPS Port {} {}",
-                    std::iter::repeat(" ").take(3).collect::<String>(),
-                    service.alb_port_https
-                );
-                println!(
-                    "Healthcheck {} {}",
-                    std::iter::repeat(" ").take(6).collect::<String>(),
-                    service.alb_port_https
-                );
-                println!(
-                    "ECR Repo {} {}",
-                    std::iter::repeat(" ").take(9).collect::<String>(),
-                    ecr_repo_name
-                );
-                println!(
-                    "AWS Region {} {}",
-                    std::iter::repeat(" ").take(7).collect::<String>(),
-                    region
-                );
-                println!(
-                    "AWS Account {} {}",
-                    std::iter::repeat(" ").take(6).collect::<String>(),
-                    account_id
-                );
+                table.add_row(Row::new(vec![
+                    Cell::new("Subomain"),
+                    Cell::new(service.subdomain.as_str()),
+                ]));
+                table.add_row(Row::new(vec![
+                    Cell::new("Container"),
+                    Cell::new(format!("{}", service.container_port).as_str()),
+                ]));
+                table.add_row(Row::new(vec![
+                    Cell::new("ALB HTTP Port"),
+                    Cell::new(format!("{}", service.alb_port_http).as_str()),
+                ]));
+                table.add_row(Row::new(vec![
+                    Cell::new("ALB HTTPS Port"),
+                    Cell::new(format!("{}", service.alb_port_https).as_str()),
+                ]));
+                table.add_row(Row::new(vec![
+                    Cell::new("Healthcheck"),
+                    Cell::new(service.health_check_endpoint.as_str()),
+                ]));
+                table.add_row(Row::new(vec![
+                    Cell::new("ECR Repo"),
+                    Cell::new(ecr_repo_name),
+                ]));
+                table.add_row(Row::new(vec![Cell::new("AWS Region"), Cell::new(region)]));
+                table.add_row(Row::new(vec![
+                    Cell::new("AWS Account"),
+                    Cell::new(account_id),
+                ]));
+
+                table.printstd();
             }
         }
 
