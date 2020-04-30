@@ -12,8 +12,8 @@ use uuid::Uuid;
 use walkdir::WalkDir;
 
 use super::types::ServiceResult;
-use super::utils::get_services;
 use crate::api_client::{ApiClient, LaunchWorkerRequest, ServiceDeployRequest};
+use crate::schemas::Service;
 use crate::utils::{await_exec_result, exec_command_with_output};
 
 const BUILD_WORKER_USER: &str = "ubuntu";
@@ -22,21 +22,7 @@ const BUILD_LOCATION: &str = "_build";
 /// This command must be run from the same location as the dockerfile of the service to be deployed.
 /// First, builds an image and pushes it to ECR.
 /// Second, triggers deploy of the service on the server.
-pub fn deploy(api_client: &ApiClient, env_name: &str, project_name: &str, service_name: &str) {
-    let service = match get_services(
-        api_client,
-        env_name,
-        project_name,
-        Some(service_name.to_string()),
-    ) {
-        Ok(services) => services[0].clone(),
-        Err(err) => {
-            debug!("Error: {}", err.to_string());
-            eprintln!("Service not found. Please check service name and try again.");
-            return;
-        }
-    };
-
+pub fn deploy(api_client: &ApiClient, service: Service) {
     debug!("got service: {:?}", service);
     let ecr_repo_uri = service.ecr_repo_url.unwrap();
 
@@ -69,7 +55,7 @@ pub fn deploy(api_client: &ApiClient, env_name: &str, project_name: &str, servic
 
     if let Some(exec_log_slug) = run_slug {
         println!("Launching build worker: {}", service.name);
-        if !await_exec_result(api_client, &exec_log_slug) {
+        if !await_exec_result(api_client, &exec_log_slug, None) {
             eprintln!("There was an error launching worker.");
             return;
         }
@@ -156,7 +142,7 @@ pub fn deploy(api_client: &ApiClient, env_name: &str, project_name: &str, servic
     };
 
     println!("Deploying service: {}", service.name);
-    await_exec_result(api_client, &run_slug);
+    await_exec_result(api_client, &run_slug, None);
 }
 
 fn unpack_and_build_tarball(ssh_conn: &Session, build_tarball: &str) -> ServiceResult<()> {

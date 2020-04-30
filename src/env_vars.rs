@@ -1,28 +1,8 @@
 use crate::api_client::{ApiClient, CreateEnvironmentVariableRequest};
-use crate::services::get_services;
+use crate::schemas::Service;
+use crate::utils::{add_row_to_output_table, get_output_table};
 
-pub fn create(
-    api_client: &ApiClient,
-    env_name: &str,
-    project_name: &str,
-    service_name: &str,
-    key_name: &str,
-    key_value: &str,
-) {
-    let service = match get_services(
-        api_client,
-        env_name,
-        project_name,
-        Some(service_name.to_string()),
-    ) {
-        Ok(services) => services[0].clone(),
-        Err(err) => {
-            debug!("Error: {}", err.to_string());
-            eprintln!("Service not found. Please check service name and try again.");
-            return;
-        }
-    };
-
+pub fn create(api_client: &ApiClient, service: Service, key_name: &str, key_value: &str) {
     match api_client.create_env_var(
         &service.slug,
         &CreateEnvironmentVariableRequest {
@@ -37,41 +17,49 @@ pub fn create(
     }
 }
 
-pub fn list(api_client: &ApiClient, env_name: &str, project_name: &str, service_name: &str) {
-    let service = match get_services(
-        api_client,
-        env_name,
-        project_name,
-        Some(service_name.to_string()),
+pub fn create_env_var_in_project(
+    api_client: &ApiClient,
+    project_slug: &str,
+    key_name: &str,
+    key_value: &str,
+) -> bool {
+    match api_client.create_env_var_in_project(
+        &project_slug,
+        &CreateEnvironmentVariableRequest {
+            key_name: key_name.to_string(),
+            key_value: key_value.to_string(),
+        },
     ) {
-        Ok(services) => services[0].clone(),
+        Ok(resp) => {
+            println!("Created new environment variables: ");
+            for key in resp {
+                println!("{}", key);
+            }
+            true
+        }
         Err(err) => {
             debug!("Error: {}", err.to_string());
-            eprintln!("Service not found. Please check service name and try again.");
-            return;
+            false
         }
-    };
+    }
+}
 
+pub fn list(api_client: &ApiClient, service: Service) {
     match api_client.list_env_vars(&service.slug) {
         Ok(env_vars) => {
             if env_vars.is_empty() {
-                println!("Service {} has no environment variables.", service_name);
+                println!("Service {} has no environment variables.", service.name);
                 return;
             }
 
+            let mut table = get_output_table();
             for env_var in env_vars {
-                println!("{}", std::iter::repeat("=").take(60).collect::<String>());
-                println!(
-                    "Name {} {}",
-                    std::iter::repeat(" ").take(5).collect::<String>(),
-                    env_var.name
-                );
-                println!(
-                    "Key path {} {}",
-                    std::iter::repeat(" ").take(1).collect::<String>(),
-                    env_var.value_from
+                add_row_to_output_table(
+                    &mut table,
+                    vec![&env_var.name, &env_var.value_from, &env_var.value],
                 );
             }
+            table.printstd();
         }
 
         Err(err) => {

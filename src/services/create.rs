@@ -54,7 +54,7 @@ pub fn create_service(api_client: &ApiClient, env_name: &str, project_name: &str
         health_check_endpoint = read!();
     }
 
-    let mut default_dockerfile_path = "./Dockerfile".to_string();
+    let mut default_dockerfile_path = "Dockerfile".to_string();
     println!(
         "Path to service's dockerfile, relative to project root [defaults to '{}']: ",
         default_dockerfile_path
@@ -81,5 +81,5 @@ pub fn create_service(api_client: &ApiClient, env_name: &str, project_name: &str
     };
 
     println!("Launching service infra: {}", service.name);
-    await_exec_result(api_client, &run_slug);
+    await_exec_result(api_client, &run_slug, None);
 }
