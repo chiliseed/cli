@@ -31,4 +31,5 @@ pub struct CreateDbRequest {
 #[derive(Debug, Deserialize)]
 pub struct CreateDbResponse {
     pub log: String,
+    pub resource: String,
 }
