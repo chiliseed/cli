@@ -93,6 +93,14 @@ fn main() {
                 info!("Deploying service: {}", service.name);
                 services::deploy(&api_client, service);
             }
+
+            ServiceSubCommands::AddStatics { service_name } => {
+                let env_name = projects::get_env_name(environment_name);
+                let project_name = projects::get_project_name(project_name);
+                let service =
+                    services::get_service(&api_client, &env_name, &project_name, &service_name);
+                info!("Adding static files buckets to service: {}", service.name);
+                services::add_statics(&api_client, service);
             }
         },
 

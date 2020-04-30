@@ -115,6 +115,11 @@ pub enum ServiceSubCommands {
         /// Name of the service to deploy
         service_name: String,
     },
+    /// Add a bucket for your static files (public read permission)
+    AddStatics {
+        /// Name of the service to which you want to add a bucket for static files
+        service_name: String,
+    },
 }
 
 #[derive(Debug, StructOpt)]
