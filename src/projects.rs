@@ -5,7 +5,7 @@ use text_io::read;
 
 use crate::api_client::{ApiClient, EnvListFilters, ProjectListFilters, ProjectRequest};
 use crate::schemas::{Env, Project};
-use crate::utils::await_exec_result;
+use crate::utils::{add_row_to_output_table, await_exec_result, get_output_table};
 
 #[derive(Debug)]
 pub enum ProjectError {
@@ -70,7 +70,28 @@ pub fn list_projects(api_client: &ApiClient, env_name: &str) {
                 }
                 println!("Environment {} has following projects: ", env.name);
                 for project in projects {
-                    println!("{:?}", project);
+                    println!();
+                    println!("{}", project.name);
+                    println!("{}", std::iter::repeat("=").take(60).collect::<String>());
+
+                    let mut table = get_output_table();
+                    add_row_to_output_table(
+                        &mut table,
+                        vec!["Environment", &project.environment.name],
+                    );
+                    add_row_to_output_table(
+                        &mut table,
+                        vec!["Region", &project.environment.region],
+                    );
+                    add_row_to_output_table(
+                        &mut table,
+                        vec!["Domain", &project.environment.domain],
+                    );
+                    add_row_to_output_table(
+                        &mut table,
+                        vec!["Status", &project.last_status.status],
+                    );
+                    table.printstd();
                 }
             }
 
@@ -109,7 +130,7 @@ pub fn create_project(api_client: &ApiClient, env_name: &str, project_name: Opti
         };
 
         println!("Launching project infra: {}", p_name);
-        await_exec_result(api_client, &run_slug);
+        await_exec_result(api_client, &run_slug, None);
     })
 }
 
