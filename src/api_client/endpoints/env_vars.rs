@@ -31,6 +31,19 @@ impl ApiClient {
         Ok(key)
     }
 
+    pub fn create_env_var_in_project(
+        &self,
+        project_slug: &str,
+        env_var: &CreateEnvironmentVariableRequest,
+    ) -> ApiResult<Vec<String>> {
+        let (response, status) = self.post(
+            &format!("/api/project/{}/environment-variables/", project_slug),
+            Some(env_var),
+        )?;
+        let keys: Vec<String> = deserialize_body(&response, status)?;
+        Ok(keys)
+    }
+
     pub fn delete_env_var(
         &self,
         service_slug: &str,
@@ -59,6 +72,9 @@ pub struct CreateEnvironmentVariableResponse {
 pub struct ListEnvironmentVariableResponse {
     pub name: String,
     pub value_from: String,
+    pub value: String,
+    pub arn: String,
+    pub kind: String,
     pub last_modified: String,
 }
 
