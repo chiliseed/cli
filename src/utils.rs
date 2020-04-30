@@ -58,19 +58,3 @@ pub fn exec_command_with_output(
     Ok((output.status.success(), output.stdout))
 }
 
-// Wrapper for executing commands in user shell. All output is sent to user shell
-// pub fn exec_command(cmd: &str, args: Vec<&str>) -> bool {
-//     println!("{} {:?}", cmd, args);
-//     let mut cli_command = match Command::new(cmd)
-//         .args(&args)
-//         .stdin(Stdio::inherit())
-//         .stdout(Stdio::inherit())
-//         .stderr(Stdio::inherit())
-//         .spawn()
-//     {
-//         Err(err) => panic!("Error spawning: {}", err.description()),
-//         Ok(process) => process,
-//     };
-//
-//     cli_command.wait().unwrap().success()
-// }
