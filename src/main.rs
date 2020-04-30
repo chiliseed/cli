@@ -25,7 +25,7 @@ fn main() {
     info!("Firing up chiliseed CLI");
     let args = Opt::from_args();
 
-    let api_client = match ApiClient::new() {
+    let api_client = match ApiClient::new(&args.username, &args.password) {
         Ok(c) => c,
         Err(err) => {
             error!("{}", err);

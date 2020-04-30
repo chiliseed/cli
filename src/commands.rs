@@ -12,6 +12,12 @@ use structopt::StructOpt;
 pub struct Opt {
     #[structopt(subcommand)]
     pub cmd: Command,
+    /// Chiliseed user email
+    #[structopt(short, long, env = "CHILISEED_USERNAME")]
+    pub username: String,
+    /// Chiliseed user password
+    #[structopt(short, long, env = "CHILISEED_PASSWORD", hide_env_values = true)]
+    pub password: String,
 }
 
 #[derive(Debug, StructOpt)]

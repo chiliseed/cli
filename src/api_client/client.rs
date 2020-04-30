@@ -1,9 +1,7 @@
 use std::env;
 
 use reqwest::{blocking, header, StatusCode};
-use rpassword::read_password_from_tty;
 use serde::Serialize;
-use text_io::read;
 
 use super::errors::ApiClientError;
 use super::schemas;
@@ -19,23 +17,7 @@ pub struct ApiClient {
 }
 
 impl ApiClient {
-    pub fn new() -> ApiResult<ApiClient> {
-        let username = match env::var("CHILISEED_USERNAME") {
-            Ok(val) => val,
-            Err(_err) => {
-                println!("Username: ");
-                read!()
-            }
-        };
-
-        let password = match env::var("CHILISEED_PASSWORD") {
-            Ok(val) => val,
-            Err(_err) => {
-                let val = read_password_from_tty(Some("Password: ")).unwrap();
-                val
-            }
-        };
-
+    pub fn new(username: &str, password: &str) -> ApiResult<ApiClient> {
         let api_host = match env::var("CHILISEED_API_HOST") {
             Ok(val) => val,
             Err(_err) => {
@@ -61,8 +43,8 @@ impl ApiClient {
         let resp = api_client
             .post(login_url.as_str())
             .json(&schemas::LoginRequest {
-                email: username.clone(),
-                password: password.clone(),
+                email: username.to_string(),
+                password: password.to_string(),
             })
             .send()?;
 
