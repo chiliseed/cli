@@ -5,6 +5,7 @@ use crate::api_client::{ApiClient, ServiceListFilter};
 use crate::environments::get_env;
 use crate::projects::get_project;
 use crate::schemas::Service;
+use std::process::exit;
 
 pub fn get_services(
     api_client: &ApiClient,
@@ -33,4 +34,25 @@ pub fn get_service_name(maybe_service_name: Option<String>) -> String {
         println!("Service name: ");
         read!()
     })
+}
+
+pub fn get_service(
+    api_client: &ApiClient,
+    env_name: &str,
+    project_name: &str,
+    service_name: &str,
+) -> Service {
+    match get_services(
+        api_client,
+        env_name,
+        project_name,
+        Some(service_name.to_string()),
+    ) {
+        Ok(services) => services[0].clone(),
+        Err(err) => {
+            debug!("Error: {}", err.to_string());
+            eprintln!("Service not found. Please check service name and try again.");
+            exit(1);
+        }
+    }
 }
