@@ -70,9 +70,9 @@ fn main() {
         } => match cmd {
             ServiceSubCommands::List {} => {
                 info!("Getting services for project");
-                let env_name = projects::get_env_name(environment_name);
-                let project_name = projects::get_project_name(project_name);
-                services::list_services(&api_client, &env_name, &project_name);
+                let env = utils::get_environment_or_exit(&api_client, environment_name);
+                let project = utils::get_project_or_exit(&api_client, project_name, &env.slug);
+                services::list_services(&api_client, project);
             }
 
             ServiceSubCommands::Create {} => {
@@ -86,21 +86,19 @@ fn main() {
             }
 
             ServiceSubCommands::Deploy { service_name } => {
-                let env_name = projects::get_env_name(environment_name);
-                let project_name = projects::get_project_name(project_name);
-                let service =
-                    services::get_service(&api_client, &env_name, &project_name, &service_name);
+                let env = utils::get_environment_or_exit(&api_client, environment_name);
+                let project = utils::get_project_or_exit(&api_client, project_name, &env.slug);
+                let service = services::get_service(&api_client, &project, &service_name);
                 info!("Deploying service: {}", service.name);
                 services::deploy(&api_client, service);
             }
 
             ServiceSubCommands::AddStatics { service_name } => {
-                let env_name = projects::get_env_name(environment_name);
-                let project_name = projects::get_project_name(project_name);
-                let service =
-                    services::get_service(&api_client, &env_name, &project_name, &service_name);
+                let env = utils::get_environment_or_exit(&api_client, environment_name);
+                let project = utils::get_project_or_exit(&api_client, project_name, &env.slug);
+                let service = services::get_service(&api_client, &project, &service_name);
                 info!("Adding static files buckets to service: {}", service.name);
-                services::add_statics(&api_client, service);
+                services::add_statics(&api_client, service, project);
             }
         },
 
@@ -114,22 +112,18 @@ fn main() {
                 key_name,
                 key_value,
             } => {
-                let env_name = projects::get_env_name(environment_name);
-                let project_name = projects::get_project_name(project_name);
-                let service_name = services::get_service_name(service_name);
-                let service =
-                    services::get_service(&api_client, &env_name, &project_name, &service_name);
+                let env = utils::get_environment_or_exit(&api_client, environment_name);
+                let project = utils::get_project_or_exit(&api_client, project_name, &env.slug);
+                let service = utils::get_service_or_exit(&api_client, &project, service_name);
                 info!("Creating new environment variable: {}", key_name);
                 env_vars::create(&api_client, service, &key_name, &key_value);
             }
 
             EnvVarSubCommands::List {} => {
-                let env_name = projects::get_env_name(environment_name);
-                let project_name = projects::get_project_name(project_name);
-                let service_name = services::get_service_name(service_name);
-                let service =
-                    services::get_service(&api_client, &env_name, &project_name, &service_name);
-                info!("Listing environment variables for service: {} in project: {} in environment: {}", service_name, project_name, env_name);
+                let env = utils::get_environment_or_exit(&api_client, environment_name);
+                let project = utils::get_project_or_exit(&api_client, project_name, &env.slug);
+                let service = utils::get_service_or_exit(&api_client, &project, service_name);
+                info!("Listing environment variables for service: {} in project: {} in environment: {}", service.name, project.name, env.name);
                 env_vars::list(&api_client, service);
             }
         },

@@ -3,13 +3,19 @@ use serde::Serialize;
 use crate::api_client::types::ApiResult;
 use crate::api_client::utils::deserialize_body;
 use crate::api_client::ApiClient;
-use crate::schemas::Resource;
+use crate::schemas::{Bucket, Resource};
 
 impl ApiClient {
     pub fn get_resource_details(&self, resource_slug: &str) -> ApiResult<Resource> {
         let (response, status) = self.get(&format!("/api/resource/{}", resource_slug))?;
-        let db: Resource = deserialize_body(&response, status)?;
-        Ok(db)
+        let resource: Resource = deserialize_body(&response, status)?;
+        Ok(resource)
+    }
+
+    pub fn get_bucket_details(&self, resource_slug: &str) -> ApiResult<Bucket> {
+        let (response, status) = self.get(&format!("/api/resource/{}", resource_slug))?;
+        let resource: Bucket = deserialize_body(&response, status)?;
+        Ok(resource)
     }
 
     pub fn list_resources(

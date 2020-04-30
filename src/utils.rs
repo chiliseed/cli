@@ -1,8 +1,12 @@
-use std::process::Command;
+use std::process::{exit, Command};
 use std::thread::sleep;
 use std::time::Duration;
 
 use crate::api_client::ApiClient;
+use crate::environments::get_env;
+use crate::projects::{get_env_name, get_project, get_project_name};
+use crate::schemas::{Env, Project, Service};
+use crate::services::{get_service, get_service_name};
 use prettytable::{format, Cell, Row, Table};
 
 const WAIT_TIME_SECS: u64 = 10;
@@ -20,9 +24,6 @@ pub fn await_exec_result(
             eprintln!("TIMING OUT after 30 minutes. Please contact support for help");
             return false;
         }
-
-        sleep(Duration::from_secs(WAIT_TIME_SECS));
-        waited += WAIT_TIME_SECS;
 
         println!("Checking create status");
 
@@ -47,6 +48,9 @@ pub fn await_exec_result(
                 return false;
             }
         }
+
+        sleep(Duration::from_secs(WAIT_TIME_SECS));
+        waited += WAIT_TIME_SECS;
     }
 }
 
@@ -77,4 +81,39 @@ pub fn add_row_to_output_table(table: &mut Table, values: Vec<&str>) {
         cells.push(Cell::new(v));
     }
     table.add_row(Row::new(cells));
+}
+
+pub fn get_environment_or_exit(api_client: &ApiClient, environment_name: Option<String>) -> Env {
+    let env_name = get_env_name(environment_name);
+    match get_env(api_client, &env_name) {
+        Ok(env) => env,
+        Err(err) => {
+            eprintln!("Error getting environment: {}", err);
+            exit(1);
+        }
+    }
+}
+
+pub fn get_project_or_exit(
+    api_client: &ApiClient,
+    project_name: Option<String>,
+    env_slug: &str,
+) -> Project {
+    let project_name = get_project_name(project_name);
+    match get_project(&api_client, env_slug, &project_name) {
+        Ok(project) => project,
+        Err(err) => {
+            eprintln!("Error getting project: {}", err);
+            exit(1);
+        }
+    }
+}
+
+pub fn get_service_or_exit(
+    api_client: &ApiClient,
+    project: &Project,
+    service_name: Option<String>,
+) -> Service {
+    let service_name = get_service_name(service_name);
+    get_service(&api_client, &project, &service_name)
 }

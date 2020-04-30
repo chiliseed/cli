@@ -2,19 +2,14 @@ use text_io::read;
 
 use super::types::{ServiceError, ServiceResult};
 use crate::api_client::{ApiClient, ServiceListFilter};
-use crate::environments::get_env;
-use crate::projects::get_project;
-use crate::schemas::Service;
+use crate::schemas::{Project, Service};
 use std::process::exit;
 
 pub fn get_services(
     api_client: &ApiClient,
-    env_name: &str,
-    project_name: &str,
+    project: &Project,
     service_name: Option<String>,
 ) -> ServiceResult<Vec<Service>> {
-    let env = get_env(api_client, env_name)?;
-    let project = get_project(api_client, &env.slug, project_name)?;
     let services = match service_name {
         Some(name) => api_client.list_services(&project.slug, Some(&ServiceListFilter { name }))?,
         None => api_client.list_services(&project.slug, None)?,
@@ -36,18 +31,8 @@ pub fn get_service_name(maybe_service_name: Option<String>) -> String {
     })
 }
 
-pub fn get_service(
-    api_client: &ApiClient,
-    env_name: &str,
-    project_name: &str,
-    service_name: &str,
-) -> Service {
-    match get_services(
-        api_client,
-        env_name,
-        project_name,
-        Some(service_name.to_string()),
-    ) {
+pub fn get_service(api_client: &ApiClient, project: &Project, service_name: &str) -> Service {
+    match get_services(api_client, project, Some(service_name.to_string())) {
         Ok(services) => services[0].clone(),
         Err(err) => {
             debug!("Error: {}", err.to_string());

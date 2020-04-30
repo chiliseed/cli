@@ -84,3 +84,27 @@ pub struct Resource {
     pub created_at: DateTime<Utc>,
     pub updated_at: Option<DateTime<Utc>>,
 }
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct BucketConfigs {
+    pub bucket: String,
+    pub arn: String,
+    pub bucket_domain_name: String,
+    pub bucket_regional_domain_name: String,
+    pub r53_zone_id: String,
+    pub region: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Bucket {
+    pub slug: String,
+    pub identifier: String,
+    pub name: String,
+    pub kind: String,
+    pub preset: String,
+    pub engine: String,
+    pub status: String,
+    pub configuration: BucketConfigs,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: Option<DateTime<Utc>>,
+}

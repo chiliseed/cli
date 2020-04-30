@@ -3,16 +3,17 @@ use prettytable::{format, Cell, Row, Table};
 use super::types::ServiceError;
 use super::utils::get_services;
 use crate::api_client::ApiClient;
+use crate::schemas::Project;
 
-pub fn list_services(api_client: &ApiClient, env_name: &str, project_name: &str) {
-    match get_services(api_client, env_name, project_name, None) {
+pub fn list_services(api_client: &ApiClient, project: Project) {
+    match get_services(api_client, &project, None) {
         Ok(services) => {
             if services.is_empty() {
                 println!("Project has no services.");
                 return;
             }
 
-            println!("Project {} has following services: ", project_name);
+            println!("Project {} has following services: ", project.name);
             for service in services {
                 let ecr_repo_url = service.ecr_repo_url.unwrap();
                 let ecr_parts: Vec<&str> = ecr_repo_url.split(".com").collect();
@@ -62,10 +63,7 @@ pub fn list_services(api_client: &ApiClient, env_name: &str, project_name: &str)
         }
 
         Err(ServiceError::ServicesNotFound(_err)) => {
-            println!(
-                "Project {} ({}) has no services yet.",
-                project_name, env_name
-            );
+            println!("Project {} has no services yet.", project.name);
             return;
         }
 
