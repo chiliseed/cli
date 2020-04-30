@@ -57,3 +57,30 @@ pub struct Worker {
     pub ssh_key_name: String,
     pub public_ip: String,
 }
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct ResourceConfigs {
+    pub instance_type: String,
+    pub engine: String,
+    pub engine_version: String,
+    pub number_of_nodes: u32,
+    pub allocated_storage: u32,
+    pub username: String,
+    pub password: String,
+    pub address: String,
+    pub port: u32,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Resource {
+    pub slug: String,
+    pub identifier: String,
+    pub name: String,
+    pub kind: String,
+    pub preset: String,
+    pub engine: String,
+    pub status: String,
+    pub configuration: ResourceConfigs,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: Option<DateTime<Utc>>,
+}
