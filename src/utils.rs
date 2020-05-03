@@ -67,6 +67,8 @@ pub fn exec_command_with_output(
     Ok((output.status.success(), output.stdout))
 }
 
+/// Construct pretty table object, to be used for outputting data structures
+/// in table format.
 pub fn get_output_table() -> Table {
     let mut table = Table::new();
     let format = format::FormatBuilder::new().column_separator('\t').build();
@@ -74,6 +76,14 @@ pub fn get_output_table() -> Table {
     table
 }
 
+/// Utility to add rows to pretty table.
+///
+/// # Example
+/// ```
+/// let mut table = get_output_table();
+/// add_row_to_output_table(&mut table, vec!["Name", "Foobar"]);
+/// table.printstd();
+/// ```
 pub fn add_row_to_output_table(table: &mut Table, values: Vec<&str>) {
     let mut cells: Vec<Cell> = Vec::new();
     for v in values {
