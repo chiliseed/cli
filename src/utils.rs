@@ -40,6 +40,8 @@ pub fn await_exec_result(
                     return false;
                 }
 
+                sleep(Duration::from_secs(WAIT_TIME_SECS));
+                waited += WAIT_TIME_SECS;
                 println!("Still creating [{}s]", waited);
                 continue;
             }
@@ -48,9 +50,6 @@ pub fn await_exec_result(
                 return false;
             }
         }
-
-        sleep(Duration::from_secs(WAIT_TIME_SECS));
-        waited += WAIT_TIME_SECS;
     }
 }
 
