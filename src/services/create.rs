@@ -64,10 +64,18 @@ pub fn create_service(api_client: &ApiClient, env_name: &str, project_name: &str
         default_dockerfile_path = dockerfile;
     }
 
+    let mut default_dockerfile_target = None;
+    println!("Optional specific dockerfile target to build: ");
+    let dockerfile_target: String = read!();
+    if !dockerfile_target.is_empty() {
+        default_dockerfile_target = Some(dockerfile_target);
+    }
+
     let service = CreateServiceRequest {
         name,
         has_web_interface,
         default_dockerfile_path,
+        default_dockerfile_target,
         subdomain,
         container_port,
         alb_port_http,

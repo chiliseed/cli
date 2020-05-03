@@ -1,9 +1,8 @@
-use prettytable::{format, Cell, Row, Table};
-
 use super::types::ServiceError;
 use super::utils::get_services;
 use crate::api_client::ApiClient;
 use crate::schemas::Project;
+use crate::utils::{add_row_to_output_table, get_output_table};
 
 pub fn list_services(api_client: &ApiClient, project: Project) {
     match get_services(api_client, &project, None) {
@@ -21,42 +20,51 @@ pub fn list_services(api_client: &ApiClient, project: Project) {
                 let aws_url_parts: Vec<&str> = ecr_repo_url.split(".").collect();
                 let region = aws_url_parts[3];
                 let account_id = aws_url_parts[0];
-                let mut table = Table::new();
-                let format = format::FormatBuilder::new().column_separator('\t').build();
-                table.set_format(format);
+
+                let mut table = get_output_table();
 
                 println!();
                 println!("{}", service.name);
                 println!("{}", std::iter::repeat("=").take(60).collect::<String>());
-                table.add_row(Row::new(vec![
-                    Cell::new("Subomain"),
-                    Cell::new(service.subdomain.as_str()),
-                ]));
-                table.add_row(Row::new(vec![
-                    Cell::new("Container"),
-                    Cell::new(format!("{}", service.container_port).as_str()),
-                ]));
-                table.add_row(Row::new(vec![
-                    Cell::new("ALB HTTP Port"),
-                    Cell::new(format!("{}", service.alb_port_http).as_str()),
-                ]));
-                table.add_row(Row::new(vec![
-                    Cell::new("ALB HTTPS Port"),
-                    Cell::new(format!("{}", service.alb_port_https).as_str()),
-                ]));
-                table.add_row(Row::new(vec![
-                    Cell::new("Healthcheck"),
-                    Cell::new(service.health_check_endpoint.as_str()),
-                ]));
-                table.add_row(Row::new(vec![
-                    Cell::new("ECR Repo"),
-                    Cell::new(ecr_repo_name),
-                ]));
-                table.add_row(Row::new(vec![Cell::new("AWS Region"), Cell::new(region)]));
-                table.add_row(Row::new(vec![
-                    Cell::new("AWS Account"),
-                    Cell::new(account_id),
-                ]));
+                add_row_to_output_table(&mut table, vec!["Subomain", service.subdomain.as_str()]);
+                add_row_to_output_table(
+                    &mut table,
+                    vec!["Container", format!("{}", service.container_port).as_str()],
+                );
+                add_row_to_output_table(
+                    &mut table,
+                    vec![
+                        "ALB HTTP Port",
+                        format!("{}", service.alb_port_http).as_str(),
+                    ],
+                );
+                add_row_to_output_table(
+                    &mut table,
+                    vec![
+                        "ALB HTTPS Port",
+                        format!("{}", service.alb_port_https).as_str(),
+                    ],
+                );
+                add_row_to_output_table(
+                    &mut table,
+                    vec!["Healthcheck", service.health_check_endpoint.as_str()],
+                );
+                add_row_to_output_table(
+                    &mut table,
+                    vec!["Dockerfile", service.default_dockerfile_path.as_str()],
+                );
+                if service.default_dockerfile_target.is_some() {
+                    add_row_to_output_table(
+                        &mut table,
+                        vec![
+                            "Dockerfile stage",
+                            service.default_dockerfile_target.unwrap().as_str(),
+                        ],
+                    );
+                }
+                add_row_to_output_table(&mut table, vec!["ECR Repo", ecr_repo_name]);
+                add_row_to_output_table(&mut table, vec!["AWS Region", region]);
+                add_row_to_output_table(&mut table, vec!["AWS Account", account_id]);
 
                 table.printstd();
             }

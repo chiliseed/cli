@@ -47,6 +47,9 @@ pub struct Service {
     pub alb_port_https: u32,
     pub health_check_endpoint: String,
     pub ecr_repo_url: Option<String>,
+    pub default_dockerfile_path: String,
+    pub default_dockerfile_target: Option<String>,
+    pub has_web_interface: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]

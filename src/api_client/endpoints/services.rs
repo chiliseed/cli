@@ -40,6 +40,7 @@ pub struct CreateServiceRequest {
     pub name: String,
     pub has_web_interface: bool,
     pub default_dockerfile_path: String,
+    pub default_dockerfile_target: Option<String>,
     pub subdomain: String,
     pub container_port: String,
     pub alb_port_http: String,
