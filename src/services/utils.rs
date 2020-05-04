@@ -41,3 +41,23 @@ pub fn get_service(api_client: &ApiClient, project: &Project, service_name: &str
         }
     }
 }
+
+pub(crate) fn ask_for_value(question: String, default: String) -> String {
+    println!("\n{}", question);
+    let new_value: String = read!("{}\n");
+    if !new_value.is_empty() {
+        new_value
+    } else {
+        default
+    }
+}
+
+pub(crate) fn ask_yes_no(question: String, default: bool) -> bool {
+    println!("\n{}", question);
+    let yes: String = read!("{}\n");
+    if yes.is_empty() {
+        default
+    } else {
+        vec!["y", "ye", "yes", "yep"].contains(&yes.to_lowercase().as_str())
+    }
+}

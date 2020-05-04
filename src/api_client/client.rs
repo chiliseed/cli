@@ -142,18 +142,26 @@ impl ApiClient {
         }
     }
 
-    // fn patch<T: Serialize>(
-    //     &self,
-    //     endpoint: &str,
-    //     payload: &T,
-    // ) -> APIResult<(ResponseBody, StatusCode)> {
-    //     let url = get_url(&self.api_host, endpoint)?;
-    //     let req = self.client.patch(&url).json(payload).send()?;
-    //     let status = req.status();
-    //     let body = req.text().unwrap();
-    //     debug!("server response {}", body);
-    //     Ok((body, status))
-    // }
+    pub(crate) fn patch<T: Serialize>(
+        &self,
+        endpoint: &str,
+        payload: Option<&T>,
+    ) -> ApiResult<(ResponseBody, StatusCode)> {
+        let url = get_url(&self.api_host, endpoint)?;
+        if let Some(data) = payload {
+            let req = self.client.patch(&url).json(data).send()?;
+            let status = req.status();
+            let body = req.text().unwrap();
+            debug!("server response {}", body);
+            Ok((body, status))
+        } else {
+            let req = self.client.patch(&url).send()?;
+            let status = req.status();
+            let body = req.text().unwrap();
+            debug!("server response {}", body);
+            Ok((body, status))
+        }
+    }
 
     pub fn get_exec_log(&self, slug: &str) -> ApiResult<ExecLog> {
         let (response_body, _) = self.get(&format!("/api/execution/status/{}", slug))?;

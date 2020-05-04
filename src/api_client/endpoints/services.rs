@@ -33,6 +33,19 @@ impl ApiClient {
         let service: CreateServiceResponse = deserialize_body(&response, status)?;
         Ok(service)
     }
+
+    pub fn update_service(
+        &self,
+        service: &Service,
+        project_slug: &str,
+    ) -> ApiResult<CreateServiceResponse> {
+        let (response, status) = self.patch(
+            &format!("/api/project/{}/services/", project_slug),
+            Some(service),
+        )?;
+        let service: CreateServiceResponse = deserialize_body(&response, status)?;
+        Ok(service)
+    }
 }
 
 #[derive(Debug, Serialize)]
