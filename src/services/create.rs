@@ -3,6 +3,7 @@ use text_io::read;
 use crate::api_client::{ApiClient, CreateServiceRequest};
 use crate::environments::get_env;
 use crate::projects::get_project;
+use crate::services::{ask_for_value, ask_yes_no};
 use crate::utils::await_exec_result;
 
 pub fn create_service(api_client: &ApiClient, env_name: &str, project_name: &str) {
@@ -24,12 +25,10 @@ pub fn create_service(api_client: &ApiClient, env_name: &str, project_name: &str
     println!("Your service name (example: api): ");
     let name: String = read!();
 
-    println!("Does your service need web interface? [y/n]: ");
-    let is_web: String = read!();
-    let mut has_web_interface = true;
-    if !vec!["y", "Y", "yes", "Yes", "YES"].contains(&is_web.as_str()) {
-        has_web_interface = false;
-    }
+    let has_web_interface = ask_yes_no(
+        "Does your service need web interface? [y/n]: ".to_string(),
+        true,
+    );
 
     let mut subdomain = "".to_string();
     let mut container_port = "".to_string();
@@ -55,27 +54,25 @@ pub fn create_service(api_client: &ApiClient, env_name: &str, project_name: &str
     }
 
     let mut default_dockerfile_path = "Dockerfile".to_string();
-    println!(
-        "Path to service's dockerfile, relative to project root [defaults to '{}']: ",
-        default_dockerfile_path
+    default_dockerfile_path = ask_for_value(
+        format!(
+            "Path to service's dockerfile, relative to project root [defaults to '{}']: ",
+            default_dockerfile_path
+        ),
+        default_dockerfile_path,
     );
-    let dockerfile: String = read!();
-    if !dockerfile.is_empty() {
-        default_dockerfile_path = dockerfile;
-    }
 
-    let mut default_dockerfile_target = None;
-    println!("Optional specific dockerfile target to build: ");
-    let dockerfile_target: String = read!();
-    if !dockerfile_target.is_empty() {
-        default_dockerfile_target = Some(dockerfile_target);
-    }
+    let mut default_dockerfile_target = "".to_string();
+    default_dockerfile_target = ask_for_value(
+        "Optional specific dockerfile target to build: ".to_string(),
+        default_dockerfile_target,
+    );
 
     let service = CreateServiceRequest {
         name,
         has_web_interface,
         default_dockerfile_path,
-        default_dockerfile_target,
+        default_dockerfile_target: Some(default_dockerfile_target),
         subdomain,
         container_port,
         alb_port_http,
