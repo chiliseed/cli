@@ -1,4 +1,4 @@
-use crate::api_client::{ApiClient, CreateServiceRequest};
+use crate::api_client::ApiClient;
 use crate::schemas::{Project, Service};
 use crate::services::{ask_for_value, ask_yes_no};
 use crate::utils::await_exec_result;
