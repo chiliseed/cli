@@ -5,6 +5,7 @@ use crate::utils::{add_row_to_output_table, get_output_table};
 pub fn list_databases(api_client: &ApiClient, project: &Project) {
     let filter = ResourceListFilter {
         kind: ResourceKind::Database,
+        identifier: None,
     };
     match api_client.list_resources(&project.slug, Some(&filter)) {
         Ok(dbs) => {

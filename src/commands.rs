@@ -125,6 +125,13 @@ pub enum ServiceSubCommands {
         /// Name of the service to which you want to add a bucket for static files
         service_name: String,
     },
+    /// Add existing database to this service
+    AddDb {
+        /// Name of the service to which you want to add a bucket for static files
+        service_name: String,
+        /// Database identifier as shown by `db list` command
+        identifier: String,
+    },
 }
 
 #[derive(Debug, StructOpt)]

@@ -44,4 +44,6 @@ pub enum ResourceKind {
 #[derive(Debug, Serialize)]
 pub struct ResourceListFilter {
     pub kind: ResourceKind,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub identifier: Option<String>,
 }

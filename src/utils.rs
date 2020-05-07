@@ -3,9 +3,10 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use crate::api_client::ApiClient;
+use crate::db::get_db;
 use crate::environments::get_env;
 use crate::projects::{get_env_name, get_project, get_project_name};
-use crate::schemas::{Env, Project, Service};
+use crate::schemas::{Env, Project, Resource, Service};
 use crate::services::{get_service, get_service_name};
 use prettytable::{format, Cell, Row, Table};
 
@@ -125,4 +126,12 @@ pub fn get_service_or_exit(
 ) -> Service {
     let service_name = get_service_name(service_name);
     get_service(&api_client, &project, &service_name)
+}
+
+pub fn get_resource_or_exit(
+    api_client: &ApiClient,
+    project: &Project,
+    db_identifier: String,
+) -> Resource {
+    get_db(api_client, &project.slug, db_identifier)
 }

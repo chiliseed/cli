@@ -108,6 +108,18 @@ fn main() {
                 info!("Adding static files buckets to service: {}", service.name);
                 services::add_statics(&api_client, service, project);
             }
+
+            ServiceSubCommands::AddDb {
+                identifier,
+                service_name,
+            } => {
+                let env = utils::get_environment_or_exit(&api_client, environment_name);
+                let project = utils::get_project_or_exit(&api_client, project_name, &env.slug);
+                let service = services::get_service(&api_client, &project, &service_name);
+                let db = utils::get_resource_or_exit(&api_client, &project, identifier);
+                info!("Adding db {} to service {}", db.identifier, service.name);
+                services::add_database(&api_client, service, db);
+            }
         },
 
         Command::EnvVar {

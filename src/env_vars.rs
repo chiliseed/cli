@@ -2,7 +2,7 @@ use crate::api_client::{ApiClient, CreateEnvironmentVariableRequest};
 use crate::schemas::Service;
 use crate::utils::{add_row_to_output_table, get_output_table};
 
-pub fn create(api_client: &ApiClient, service: Service, key_name: &str, key_value: &str) {
+pub fn create(api_client: &ApiClient, service: Service, key_name: &str, key_value: &str) -> bool {
     match api_client.create_env_var(
         &service.slug,
         &CreateEnvironmentVariableRequest {
@@ -10,9 +10,14 @@ pub fn create(api_client: &ApiClient, service: Service, key_name: &str, key_valu
             key_value: key_value.to_string(),
         },
     ) {
-        Ok(resp) => println!("Created new environment variable: {}", resp.key_name),
+        Ok(resp) => {
+            println!("Created new environment variable: {}", resp.key_name);
+            return true;
+        }
         Err(err) => {
             debug!("Error: {}", err.to_string());
+            eprintln!("Server error. Please try again later.");
+            return false;
         }
     }
 }
