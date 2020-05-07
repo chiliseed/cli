@@ -147,6 +147,16 @@ fn main() {
                 info!("Adding new database in {} environment", env_name);
                 db::create_db(&api_client, &env_name, &project_name);
             }
+
+            DbSubCommands::List {} => {
+                let env = utils::get_environment_or_exit(&api_client, environment_name);
+                let project = utils::get_project_or_exit(&api_client, project_name, &env.slug);
+                info!(
+                    "Listing databases in project {} ({})",
+                    project.name, env.name
+                );
+                db::list_databases(&api_client, &project);
+            }
         },
     }
 }

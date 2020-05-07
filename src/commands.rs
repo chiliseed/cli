@@ -145,4 +145,6 @@ pub enum EnvVarSubCommands {
 pub enum DbSubCommands {
     /// Create new database in environment
     Create {},
+    /// List all databases in project
+    List {},
 }

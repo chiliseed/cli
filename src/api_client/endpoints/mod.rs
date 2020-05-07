@@ -13,4 +13,5 @@ pub use self::deployments::*;
 pub use self::env_vars::*;
 pub use self::environments::*;
 pub use self::projects::*;
+pub use self::resources::*;
 pub use self::services::*;
