@@ -121,7 +121,7 @@ pub fn deploy(api_client: &ApiClient, service: Service, build_args: Option<Vec<S
     };
 
     // unpack the tarball on server
-    match unpack_and_build_tarball(&ssh_conn, &build_tarball) {
+    match unpack_and_build_tarball(&ssh_conn, &build_tarball, build_args, &version_sha) {
         Ok(()) => println!("Build extracted"),
         Err(err) => {
             eprintln!("Error: {}", err);
@@ -147,7 +147,12 @@ pub fn deploy(api_client: &ApiClient, service: Service, build_args: Option<Vec<S
     await_exec_result(api_client, &run_slug, None);
 }
 
-fn unpack_and_build_tarball(ssh_conn: &Session, build_tarball: &str) -> ServiceResult<()> {
+fn unpack_and_build_tarball(
+    ssh_conn: &Session,
+    build_tarball: &str,
+    build_args: Option<Vec<String>>,
+    version: &str,
+) -> ServiceResult<()> {
     println!("Extracting build package");
     exec_cmd_on_server(
         ssh_conn,
@@ -167,10 +172,21 @@ fn unpack_and_build_tarball(ssh_conn: &Session, build_tarball: &str) -> ServiceR
     debug!("Removing build directory");
     fs::remove_dir_all(BUILD_LOCATION)?;
 
-    exec_cmd_on_server(
-        ssh_conn,
-        &format!("/home/{}/chiliseed-build-worker", BUILD_WORKER_USER),
-    )?;
+    let mut build_cmd = format!(
+        "/home/{}/chiliseed-build-worker -v {}",
+        BUILD_WORKER_USER, version
+    );
+    if let Some(args) = build_args {
+        for arg in args {
+            build_cmd.push_str(&format!(" --build-arg {}", arg));
+        }
+    }
+    let exec_status = exec_cmd_on_server(ssh_conn, &build_cmd)?;
+    if exec_status != 0 {
+        return Err(ServiceError::DeploymentError(
+            "Build script failed".to_string(),
+        ));
+    }
 
     Ok(())
 }
