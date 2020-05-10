@@ -93,12 +93,15 @@ fn main() {
                 services::update(&api_client, project, service);
             }
 
-            ServiceSubCommands::Deploy { service_name } => {
+            ServiceSubCommands::Deploy {
+                service_name,
+                build_arg,
+            } => {
                 let env = utils::get_environment_or_exit(&api_client, environment_name);
                 let project = utils::get_project_or_exit(&api_client, project_name, &env.slug);
                 let service = services::get_service(&api_client, &project, &service_name);
                 info!("Deploying service: {}", service.name);
-                services::deploy(&api_client, service);
+                services::deploy(&api_client, service, build_arg);
             }
 
             ServiceSubCommands::AddStatics { service_name } => {

@@ -114,6 +114,9 @@ pub enum ServiceSubCommands {
     Deploy {
         /// Name of the service to deploy
         service_name: String,
+        /// Docker build arguments
+        #[structopt(long)]
+        build_arg: Option<Vec<String>>,
     },
     /// Update service parameters
     Update {

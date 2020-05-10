@@ -17,6 +17,19 @@ impl ApiClient {
         let db: CreateDbResponse = deserialize_body(&response, status)?;
         Ok(db)
     }
+
+    pub fn add_db_to_service(
+        &self,
+        service_slug: &str,
+        params: &AddDbRequest,
+    ) -> ApiResult<AddDbResponse> {
+        let (response, status) = self.post(
+            &format!("/api/service/{}/add-db", service_slug),
+            Some(params),
+        )?;
+        let log: AddDbResponse = deserialize_body(&response, status)?;
+        Ok(log)
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -32,4 +45,14 @@ pub struct CreateDbRequest {
 pub struct CreateDbResponse {
     pub log: String,
     pub resource: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AddDbRequest {
+    pub db_slug: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AddDbResponse {
+    pub log: String,
 }
