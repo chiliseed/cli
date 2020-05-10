@@ -14,6 +14,7 @@ use walkdir::WalkDir;
 use super::types::ServiceResult;
 use crate::api_client::{ApiClient, LaunchWorkerRequest, ServiceDeployRequest};
 use crate::schemas::Service;
+use crate::services::types::ServiceError;
 use crate::utils::{await_exec_result, exec_command_with_output};
 
 const BUILD_WORKER_USER: &str = "ubuntu";
@@ -22,7 +23,7 @@ const BUILD_LOCATION: &str = "_build";
 /// This command must be run from the same location as the dockerfile of the service to be deployed.
 /// First, builds an image and pushes it to ECR.
 /// Second, triggers deploy of the service on the server.
-pub fn deploy(api_client: &ApiClient, service: Service) {
+pub fn deploy(api_client: &ApiClient, service: Service, build_args: Option<Vec<String>>) {
     debug!("got service: {:?}", service);
     let ecr_repo_uri = service.ecr_repo_url.unwrap();
 
@@ -32,12 +33,13 @@ pub fn deploy(api_client: &ApiClient, service: Service) {
         exec_command_with_output("git", vec!["rev-parse", "--short", "HEAD"]).unwrap();
 
     let version_sha = match success {
-        true => String::from_utf8(version).unwrap(),
+        true => sanitize_word(version),
         false => {
             eprintln!("Error getting git sha");
             return;
         }
     };
+    println!("Version: {}", version_sha);
 
     debug!("version to be deployed: {}", version_sha);
     let (worker_slug, run_slug) = match api_client.launch_worker(
@@ -300,4 +302,17 @@ fn setup_deployment_dir() -> ServiceResult<()> {
         fs::copy(path, build_path)?;
     }
     Ok(())
+}
+
+/// Remove whitespaces and trailing new line or carriage signs
+fn sanitize_word(word: Vec<u8>) -> String {
+    let word_utf = String::from_utf8(word).unwrap();
+    let mut word_utf = String::from(word_utf.trim());
+    if word_utf.ends_with("\n") {
+        word_utf.pop();
+        if word_utf.ends_with("\r") {
+            word_utf.pop();
+        }
+    }
+    word_utf
 }
