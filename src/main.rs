@@ -108,8 +108,16 @@ fn main() {
                 let env = utils::get_environment_or_exit(&api_client, environment_name);
                 let project = utils::get_project_or_exit(&api_client, project_name, &env.slug);
                 let service = services::get_service(&api_client, &project, &service_name);
-                info!("Adding static files buckets to service: {}", service.name);
+                info!("Adding static files bucket to service: {}", service.name);
                 services::add_statics(&api_client, service, project);
+            }
+
+            ServiceSubCommands::RemoveStatics { service_name } => {
+                let env = utils::get_environment_or_exit(&api_client, environment_name);
+                let project = utils::get_project_or_exit(&api_client, project_name, &env.slug);
+                let service = services::get_service(&api_client, &project, &service_name);
+                info!("Removing static files bucket to service: {}", service.name);
+                services::remove_statics(&api_client, service);
             }
 
             ServiceSubCommands::AddDb {
