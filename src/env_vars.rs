@@ -1,4 +1,6 @@
-use crate::api_client::{ApiClient, CreateEnvironmentVariableRequest};
+use crate::api_client::{
+    ApiClient, CreateEnvironmentVariableRequest, DeleteEnvironmentVariableRequest,
+};
 use crate::schemas::Service;
 use crate::utils::{add_row_to_output_table, get_output_table};
 
@@ -12,12 +14,12 @@ pub fn create(api_client: &ApiClient, service: Service, key_name: &str, key_valu
     ) {
         Ok(resp) => {
             println!("Created new environment variable: {}", resp.key_name);
-            return true;
+            true
         }
         Err(err) => {
             debug!("Error: {}", err.to_string());
             eprintln!("Server error. Please try again later.");
-            return false;
+            false
         }
     }
 }
@@ -69,6 +71,19 @@ pub fn list(api_client: &ApiClient, service: Service) {
 
         Err(err) => {
             eprintln!("Error: {}", err.to_string());
+        }
+    }
+}
+
+pub fn delete_env_var(api_client: &ApiClient, service_slug: &str, key_name: &str) -> bool {
+    let params = DeleteEnvironmentVariableRequest {
+        key_name: key_name.to_string(),
+    };
+    match api_client.delete_env_var(service_slug, &params) {
+        Ok(()) => true,
+        Err(err) => {
+            debug!("Server error: {}", err);
+            false
         }
     }
 }
