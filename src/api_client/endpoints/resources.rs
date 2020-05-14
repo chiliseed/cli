@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::api_client::types::ApiResult;
 use crate::api_client::utils::deserialize_body;
@@ -31,6 +31,15 @@ impl ApiClient {
         let resources: Vec<Resource> = deserialize_body(&response, status)?;
         Ok(resources)
     }
+
+    pub fn remove_statics_bucket(&self, service_slug: &str) -> ApiResult<ExecLog> {
+        let (response, status) = self.post(
+            &format!("/api/service/{}/remove-statics-bucket", service_slug),
+            None::<&ResourceListFilter>,
+        )?;
+        let log: ExecLog = deserialize_body(&response, status)?;
+        Ok(log)
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -46,4 +55,9 @@ pub struct ResourceListFilter {
     pub kind: ResourceKind,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub identifier: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ExecLog {
+    pub log: String,
 }

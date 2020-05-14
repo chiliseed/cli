@@ -123,11 +123,13 @@ pub enum ServiceSubCommands {
         /// Name of the service to update
         service_name: String,
     },
-    /// Add a bucket for your static files (public read permission)
+    /// Add a bucket for your static files
     AddStatics {
         /// Name of the service to which you want to add a bucket for static files
         service_name: String,
     },
+    /// Remove statics file bucket
+    RemoveStatics { service_name: String },
     /// Add existing database to this service
     AddDb {
         /// Name of the service to which you want to add a bucket for static files
