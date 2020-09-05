@@ -31,7 +31,7 @@ pub enum Command {
     #[structopt(name = "project", about = "Management commands for projects")]
     Project {
         /// Name of the environment hosting the project(s)
-        #[structopt(short, long = "environment")]
+        #[structopt(short, long = "environment", env = "CHILISEED_ENVIRONMENT")]
         environment_name: Option<String>,
         #[structopt(subcommand)]
         cmd: ProjectSubCommands,
@@ -40,7 +40,7 @@ pub enum Command {
     #[structopt(name = "service", about = "Management commands for services")]
     Service {
         /// Name of the environment hosting the project
-        #[structopt(short, long = "environment")]
+        #[structopt(short, long = "environment", env = "CHILISEED_ENVIRONMENT")]
         environment_name: Option<String>,
         /// Name of the project to which the service(s) is(are) related
         #[structopt(short, long = "project")]
@@ -55,7 +55,7 @@ pub enum Command {
     )]
     EnvVar {
         /// Name of the environment hosting the project
-        #[structopt(short, long = "environment")]
+        #[structopt(short, long = "environment", env = "CHILISEED_ENVIRONMENT")]
         environment_name: Option<String>,
         /// Name of the project hosting the service
         #[structopt(short, long = "project")]
@@ -73,7 +73,7 @@ pub enum Command {
     )]
     Db {
         /// Name of the environment hosting database(s)
-        #[structopt(short, long = "environment")]
+        #[structopt(short, long = "environment", env = "CHILISEED_ENVIRONMENT")]
         environment_name: Option<String>,
         /// Name of the project for which to add the database
         #[structopt(short, long = "project")]
@@ -108,7 +108,7 @@ pub enum ProjectSubCommands {
 pub enum ServiceSubCommands {
     /// List services for project in environment
     List {},
-    /// Register new service and created it's infrastructure
+    /// Register new service and create the infrastructure
     Create {},
     /// Deploy new version of the service
     Deploy {
