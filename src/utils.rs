@@ -13,6 +13,9 @@ use prettytable::{format, Cell, Row, Table};
 const WAIT_TIME_SECS: u64 = 10;
 const WAIT_SERVER_TIMEOUT_MINUTES: u64 = 30;
 
+/// Await infra executors for a specific run.
+/// Providing `timeout_minutes` will wait for that amount of minutes, otherwise
+/// default value is using of 30 minutes.
 pub fn await_exec_result(
     api_client: &ApiClient,
     run_slug: &str,
