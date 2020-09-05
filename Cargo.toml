@@ -1,31 +1,31 @@
 [package]
 name = "chiliseed"
-version = "0.1.0"
+version = "0.1.2"
 authors = ["Chiliseed LTD <info@chiliseed.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chrono = {version = "0.4.10", features = ["serde"]}
-flate2 = "1.0.13"
-globset = "0.3"
-log = "0.4.8"
-pretty_env_logger = "0.3.1"
+chrono = {version = "0.4.13", features = ["serde"]}
+flate2 = "1.0.16"
+globset = "0.4.5"
+log = "0.4.11"
+pretty_env_logger = "0.4.0"
 prettytable-rs = "0.8"
-reqwest = {version = "0.10.1", features = ["json", "blocking", "cookies"]}
-rpassword = "4.0"
-rusoto_core = "0.43.0"
-rusoto_credential = "0.43.0"
-serde = {version = "1.0.104", features = ["derive"]}
-serde_json = "1.0.47"
-ssh2 = "0.8.0"
-structopt = "0.3.9"
-tar = "0.4.26"
+reqwest = {version = "0.10.7", features = ["json", "blocking", "cookies"]}
+rpassword = "4.0.5"
+rusoto_core = "0.45.0"
+rusoto_credential = "0.45.0"
+serde = {version = "1.0.114", features = ["derive"]}
+serde_json = "1.0.57"
+ssh2 = "0.8.2"
+structopt = "0.3.15"
+tar = "0.4.29"
 text_io = "0.1.8"
-tokio = {version = "0.2.11", features = ["rt-core", "macros"]}
+tokio = {version = "0.2.22", features = ["rt-core", "macros"]}
 url = "2.1.1"
-uuid = { version = "0.8", features = ["v4"] }
+uuid = { version = "0.8.1", features = ["v4"] }
 walkdir = "2.3.1"
 
 [profile.release]
