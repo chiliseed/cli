@@ -53,7 +53,6 @@ pub fn add(api_client: &ApiClient, name: Option<String>, domain: Option<String>)
             eprintln!("ERROR: {}", err.message);
             return;
         }
-        _ => {}
     };
 
     let req = CreateEnvRequest {
