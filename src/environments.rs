@@ -10,7 +10,7 @@ use tokio;
 
 use crate::api_client::{ApiClient, CreateEnvRequest, EnvListFilters};
 use crate::schemas::Env;
-use crate::utils::await_exec_result;
+use crate::utils::{add_row_to_output_table, await_exec_result, get_output_table};
 
 #[derive(Debug)]
 pub enum EnvError {
@@ -53,6 +53,7 @@ pub fn add(api_client: &ApiClient, name: Option<String>, domain: Option<String>)
             eprintln!("ERROR: {}", err.message);
             return;
         }
+        _ => {}
     };
 
     let req = CreateEnvRequest {
@@ -82,7 +83,22 @@ pub fn list_envs(api_client: &ApiClient) {
             }
             println!("Your environments: ");
             for env in envs {
-                println!("{:?}", env);
+                println!();
+                println!("{}", env.name);
+                println!("{}", std::iter::repeat("=").take(60).collect::<String>());
+
+                let mut table = get_output_table();
+                add_row_to_output_table(&mut table, vec!["AWS Region", env.region.as_str()]);
+                add_row_to_output_table(&mut table, vec!["Domain", env.domain.as_str()]);
+                add_row_to_output_table(
+                    &mut table,
+                    vec!["Created at", env.created_at.to_rfc2822().as_str()],
+                );
+                add_row_to_output_table(
+                    &mut table,
+                    vec!["Status", env.last_status.status.as_str()],
+                );
+                table.printstd();
             }
         }
 
