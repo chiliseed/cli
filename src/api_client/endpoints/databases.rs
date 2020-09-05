@@ -11,7 +11,7 @@ impl ApiClient {
         params: &CreateDbRequest,
     ) -> ApiResult<CreateDbResponse> {
         let (response, status) = self.post(
-            &format!("/api/environment/{}/add-db/", env_slug),
+            &format!("/api/environment/{}/add-db", env_slug),
             Some(params),
         )?;
         let db: CreateDbResponse = deserialize_body(&response, status)?;
